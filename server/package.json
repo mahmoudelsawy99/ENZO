@@ -1,0 +1,48 @@
+{
+  "name": "enzo-server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ENZO Barbershop API. Authentication, tenants, workforce, catalog, appointments, and checkout.",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --import tsx --test test/phase2.test.ts && node --import tsx --test test/phase3.test.ts && node --import tsx --test test/phase4.test.ts && node --import tsx --test test/phase5.test.ts && node --import tsx --test test/phase6.test.ts && node --import tsx --test test/phase7.test.ts && node --import tsx --test test/phase8.test.ts && node --import tsx --test test/phase9.test.ts && node --import tsx --test test/phase10.test.ts && node --import tsx --test test/phase12.test.ts",
+    "seed:uat": "tsx scripts/seed-uat.ts",
+    "reset:uat": "tsx scripts/reset-uat.ts"
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "exceljs": "^4.4.0",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.7.3",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.1.1",
+    "multer": "^2.5.0",
+    "pdfkit": "^0.20.2",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "@types/cookie-parser": "^1.4.10",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/multer": "^2.3.0",
+    "@types/node": "^22.19.0",
+    "@types/pdfkit": "^0.17.7",
+    "@types/supertest": "^7.2.1",
+    "mongodb-memory-server": "^11.3.0",
+    "supertest": "^7.3.1",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  }
+}

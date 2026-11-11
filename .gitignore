@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.angular/
+.env
+server/uploads/
+*.log
+.DS_Store
+Thumbs.db

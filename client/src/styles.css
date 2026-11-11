@@ -1,0 +1,45 @@
+@import 'tailwindcss';
+@import '@fontsource/dm-sans/latin-400.css';
+@import '@fontsource/dm-sans/latin-500.css';
+@import '@fontsource/dm-sans/latin-600.css';
+@import '@fontsource/dm-sans/latin-700.css';
+@import '@fontsource/cormorant-garamond/latin-500.css';
+@import '@fontsource/cormorant-garamond/latin-600.css';
+@import '@fontsource/noto-sans-arabic/arabic-400.css';
+@import '@fontsource/noto-sans-arabic/arabic-500.css';
+@import '@fontsource/noto-sans-arabic/arabic-600.css';
+@import '@fontsource/noto-sans-arabic/arabic-700.css';
+@import '@fontsource/noto-naskh-arabic/arabic-500.css';
+@import '@fontsource/noto-naskh-arabic/arabic-600.css';
+@import './styles/tokens.css';
+@import './styles/base.css';
+
+@theme inline {
+  --color-brand-red: var(--color-brand-red);
+  --color-brand-red-hover: var(--color-brand-red-hover);
+  --color-brand-blue: var(--color-brand-blue);
+  --color-brand-white: var(--color-brand-white);
+  --color-brand-gold: var(--color-brand-gold);
+  --color-on-brand: var(--color-on-brand);
+  --color-background: var(--color-background);
+  --color-surface: var(--color-surface);
+  --color-surface-elevated: var(--color-surface-elevated);
+  --color-sidebar: var(--color-sidebar);
+  --color-input: var(--color-input);
+  --color-text-primary: var(--color-text-primary);
+  --color-text-secondary: var(--color-text-secondary);
+  --color-border: var(--color-border);
+  --color-hover: var(--color-hover);
+  --color-focus: var(--color-focus);
+  --color-overlay: var(--color-overlay);
+  --color-success: var(--color-success);
+  --color-success-subtle: var(--color-success-subtle);
+  --color-warning: var(--color-warning);
+  --color-warning-subtle: var(--color-warning-subtle);
+  --color-danger: var(--color-danger);
+  --color-danger-subtle: var(--color-danger-subtle);
+  --color-info: var(--color-info);
+  --color-info-subtle: var(--color-info-subtle);
+  --font-sans: 'DM Sans', 'Noto Sans Arabic', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Cormorant Garamond', 'Noto Naskh Arabic', Georgia, serif;
+}

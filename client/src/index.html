@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en" dir="ltr" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <title>ENZO</title>
+    <base href="/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <script>
+      (function () {
+        try {
+          var theme = localStorage.getItem('enzo.theme');
+          var lang = localStorage.getItem('enzo.lang');
+          if (theme !== 'light' && theme !== 'dark') theme = 'dark';
+          if (lang !== 'ar' && lang !== 'en') lang = 'en';
+          var root = document.documentElement;
+          root.setAttribute('data-theme', theme);
+          root.setAttribute('lang', lang);
+          root.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+          root.style.colorScheme = theme;
+        } catch (error) {
+          /* Storage can be blocked. Dark English remains the default. */
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <app-root></app-root>
+  </body>
+</html>
