@@ -14,9 +14,17 @@ interface ShopUser extends AuthUser {
   roleName: string;
 }
 
+interface ShopEmployee {
+  id: string;
+  employeeNumber: string;
+  fullName: string;
+  userId: string | null;
+}
+
 interface ShopFile {
   branch: { id: string; name: string; code: string; status: string };
   users: ShopUser[];
+  employees: ShopEmployee[];
   entitlements: unknown;
   home: { owner: unknown; cashier: unknown };
 }
@@ -70,7 +78,10 @@ async function answer(request: HttpRequest<unknown>) {
     return ok({ data: user.isOwner ? shop.home.owner : shop.home.cashier });
   }
   if (method === 'GET' && (path === '/v1/users' || path.startsWith('/v1/users?'))) {
-    return ok(page(shop.users.map(presentUser)));
+    return ok(page(shop.users.map((user) => presentUser(user, shop))));
+  }
+  if (method === 'GET' && (path === '/v1/employees' || path.startsWith('/v1/employees?'))) {
+    return ok(page(shop.employees));
   }
   if (method === 'GET') {
     return ok(page([]));
@@ -128,7 +139,8 @@ function publicUser(user: ShopUser): AuthUser {
   };
 }
 
-function presentUser(user: ShopUser) {
+function presentUser(user: ShopUser, shop: ShopFile) {
+  const employee = shop.employees.find((item) => item.userId === user.id);
   return {
     id: user.id,
     fullName: user.fullName,
@@ -136,7 +148,7 @@ function presentUser(user: ShopUser) {
     phone: user.phone,
     status: user.status,
     isOwner: user.isOwner,
-    employee: null,
+    employee: employee ? { id: employee.id, fullName: employee.fullName, employeeNumber: employee.employeeNumber } : null,
     lastLoginAt: user.lastLoginAt,
     roles: [
       {
