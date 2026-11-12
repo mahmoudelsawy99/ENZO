@@ -12,11 +12,18 @@ import type { z } from 'zod';
 const REFRESH_COOKIE = 'enzo_refresh';
 const RESET_ACK = 'If an account exists for that email, the reset request has been saved.';
 
-function cookieOptions(rememberMe: boolean): CookieOptions {
+function cookieFlags(req: Request): Pick<CookieOptions, 'secure' | 'sameSite'> {
+  const secure = req.secure || env.cookieSecure;
+  return {
+    secure,
+    sameSite: secure ? 'none' : 'lax',
+  };
+}
+
+function cookieOptions(req: Request, rememberMe: boolean): CookieOptions {
   const options: CookieOptions = {
     httpOnly: true,
-    secure: env.cookieSecure,
-    sameSite: 'lax',
+    ...cookieFlags(req),
     path: '/api/v1/auth',
   };
   if (rememberMe) {
@@ -31,8 +38,8 @@ function readRefreshCookie(req: Request): string | undefined {
   return typeof value === 'string' && value.length > 0 ? value : undefined;
 }
 
-function sendSession(res: Response, session: IssuedSession): void {
-  res.cookie(REFRESH_COOKIE, session.refreshToken, cookieOptions(session.rememberMe));
+function sendSession(req: Request, res: Response, session: IssuedSession): void {
+  res.cookie(REFRESH_COOKIE, session.refreshToken, cookieOptions(req, session.rememberMe));
   res.json({
     data: {
       accessToken: session.accessToken,
@@ -42,11 +49,10 @@ function sendSession(res: Response, session: IssuedSession): void {
   });
 }
 
-function clearRefreshCookie(res: Response): void {
+function clearRefreshCookie(req: Request, res: Response): void {
   res.clearCookie(REFRESH_COOKIE, {
     httpOnly: true,
-    secure: env.cookieSecure,
-    sameSite: 'lax',
+    ...cookieFlags(req),
     path: '/api/v1/auth',
   });
 }
@@ -54,12 +60,12 @@ function clearRefreshCookie(res: Response): void {
 export const loginHandler = asyncHandler(async (req, res) => {
   const { body } = readValidated<z.infer<typeof loginSchema>>(req);
   const session = await login(body, requestMeta(req));
-  sendSession(res, session);
+  sendSession(req, res, session);
 });
 
 export const refreshHandler = asyncHandler(async (req, res) => {
   const session = await refresh(readRefreshCookie(req), requestMeta(req));
-  sendSession(res, session);
+  sendSession(req, res, session);
 });
 
 export const logoutHandler = asyncHandler(async (req, res) => {
@@ -74,7 +80,7 @@ export const logoutHandler = asyncHandler(async (req, res) => {
     }
   }
   await logout(sessionId, readRefreshCookie(req));
-  clearRefreshCookie(res);
+  clearRefreshCookie(req, res);
   res.status(204).send();
 });
 
@@ -84,7 +90,7 @@ export const logoutAllHandler = asyncHandler(async (req, res) => {
     return;
   }
   await logoutAll(req.auth.userId);
-  clearRefreshCookie(res);
+  clearRefreshCookie(req, res);
   res.status(204).send();
 });
 
@@ -115,6 +121,6 @@ export const changePasswordHandler = asyncHandler(async (req, res) => {
   }
   const { body } = readValidated<z.infer<typeof changePasswordSchema>>(req);
   await changePassword(req.auth.userId, body.currentPassword, body.newPassword);
-  clearRefreshCookie(res);
+  clearRefreshCookie(req, res);
   res.json({ data: { message: 'Password updated. Sign in again.' } });
 });

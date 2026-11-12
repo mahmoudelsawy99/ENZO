@@ -29,6 +29,10 @@ jobs:
           cache: npm
           cache-dependency-path: client/package-lock.json
       - run: npm ci
+      - name: Point the site at the public API
+        env:
+          API_PUBLIC_URL: ${{ vars.API_PUBLIC_URL }}
+        run: node scripts/set-api-url.mjs
       - run: npx ng build --configuration=production --base-href /ENZO/
       - name: Keep client routes on GitHub Pages
         run: |
