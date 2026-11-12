@@ -27,6 +27,16 @@ interface ShopFile {
   employees: ShopEmployee[];
   entitlements: unknown;
   home: { owner: unknown; cashier: unknown };
+  serviceCategories: unknown[];
+  services: ShopService[];
+}
+
+interface ShopService {
+  id: string;
+  name: { en: string; ar: string };
+  categoryId: string;
+  price: number;
+  status: string;
 }
 
 let shopFile: Promise<ShopFile> | null = null;
@@ -82,6 +92,16 @@ async function answer(request: HttpRequest<unknown>) {
   }
   if (method === 'GET' && (path === '/v1/employees' || path.startsWith('/v1/employees?'))) {
     return ok(page(shop.employees));
+  }
+  if (method === 'GET' && (path === '/v1/service-categories' || path.startsWith('/v1/service-categories?'))) {
+    return ok({ data: shop.serviceCategories });
+  }
+  if (method === 'GET' && (path === '/v1/services' || path.startsWith('/v1/services?'))) {
+    return ok(servicePage(shop.services, request.url));
+  }
+  const service = path.match(/^\/v1\/services\/([a-f\d]{24})$/i);
+  if (method === 'GET' && service) {
+    return ok({ data: shop.services.find((item) => item.id === service[1]) ?? null });
   }
   if (method === 'GET') {
     return ok(page([]));
@@ -166,6 +186,23 @@ function presentUser(user: ShopUser, shop: ShopFile) {
 
 function page(data: unknown[]) {
   return { data, meta: { page: 1, pageSize: 20, total: data.length } };
+}
+
+function servicePage(services: ShopService[], url: string) {
+  const query = new URLSearchParams(url.includes('?') ? url.slice(url.indexOf('?') + 1) : '');
+  const pageNumber = Math.max(1, Number(query.get('page') ?? 1) || 1);
+  const pageSize = Math.max(1, Number(query.get('pageSize') ?? 20) || 20);
+  const search = (query.get('search') ?? '').trim().toLowerCase();
+  const status = query.get('status') ?? '';
+  const categoryId = query.get('categoryId') ?? '';
+  const filtered = services.filter((service) => {
+    if (status && service.status !== status) return false;
+    if (categoryId && service.categoryId !== categoryId) return false;
+    if (!search) return true;
+    return `${service.name.en} ${service.name.ar}`.toLowerCase().includes(search);
+  });
+  const start = (pageNumber - 1) * pageSize;
+  return { data: filtered.slice(start, start + pageSize), meta: { page: pageNumber, pageSize, total: filtered.length } };
 }
 
 function ok(body: unknown) {
