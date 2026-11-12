@@ -53,6 +53,7 @@ async function tokenFor(email: string, password: string) {
 
 before(async () => {
   replSet = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
+  process.env['MONGODB_URI'] = replSet.getUri();
   db = (await import('mongoose')).default;
   app = (await import('../src/app.js')).createApp();
   User = (await import('../src/modules/users/user.model.js')).User;
