@@ -5,15 +5,21 @@ import { hasDuplicateKey, runInTransaction } from '../../shared/mongo.js';
 import { saveDoc } from '../../shared/persist.js';
 import { normalizePhone } from '../../shared/phone.js';
 import { escapeRegex, timestamp } from '../../shared/text.js';
-import { assertBranchInScope } from '../access/access.middleware.js';
+import { assertBranchInScope, assertEmployeeOperational } from '../access/access.middleware.js';
 import type { TenantAccess } from '../access/access.types.js';
 import { writeAudit } from '../access/audit.service.js';
 import type { PermissionKey } from '../access/permissions.js';
 import { Appointment } from '../appointments/appointment.model.js';
+import { AppointmentStatusHistory } from '../appointments/status-history.model.js';
 import { Branch } from '../branches/branch.model.js';
+import { readPolicy } from '../catalog/policy.js';
 import { quoteCommission } from '../commissions/commission.service.js';
 import { Customer } from '../customers/customer.model.js';
+import { createCustomer } from '../customers/customer.service.js';
+import type { CustomerBody } from '../customers/customer.validation.js';
+import { EmployeeBranch } from '../employees/assignment.model.js';
 import { Employee } from '../employees/employee.model.js';
+import { Service } from '../services/service.model.js';
 import { CustomerPackage } from '../packages/package.model.js';
 import { consumeSaleStock, restockSale } from '../inventory/inventory.service.js';
 import { consumeCustomerPackageItem, customerPackages } from '../packages/package.service.js';
@@ -28,7 +34,7 @@ import {
   type PaymentMethod,
   type SaleStatus,
 } from './sale.model.js';
-import type { CheckoutBody, RefundBody } from './pos.validation.js';
+import type { CheckoutBody, CounterOrderBody, RefundBody } from './pos.validation.js';
 
 function assertCan(access: TenantAccess, key: PermissionKey): void {
   if (!access.isOwner && !access.permissions.has(key)) {
@@ -78,7 +84,7 @@ async function presentSale(access: TenantAccess, id: string) {
     Refund.find({ tenantId: access.tenantId, transactionId: sale._id }).sort({ createdAt: 1 }),
     Tip.find({ tenantId: access.tenantId, transactionId: sale._id }).sort({ createdAt: 1 }),
     CommissionSnapshot.find({ tenantId: access.tenantId, transactionId: sale._id }),
-    Customer.findOne({ _id: sale.customerId, tenantId: access.tenantId }).select('fullName'),
+    Customer.findOne({ _id: sale.customerId, tenantId: access.tenantId }).select('fullName phone'),
     User.findById(sale.cashierUserId).select('fullName'),
   ]);
   const employees = await Employee.find({ tenantId: access.tenantId, _id: { $in: tips.map((tip) => tip.employeeId) } }).select('fullName');
@@ -90,6 +96,7 @@ async function presentSale(access: TenantAccess, id: string) {
     appointmentId: String(sale.appointmentId),
     customerId: String(sale.customerId),
     customerName: customer?.fullName ?? '',
+    customerPhone: customer?.phone ?? '',
     cashierUserId: String(sale.cashierUserId),
     cashierName: cashier?.fullName ?? '',
     items: sale.items.map((item) => ({
@@ -524,6 +531,193 @@ export async function checkout(access: TenantAccess, input: CheckoutBody) {
           { $set: { checkoutStatus: 'NOT_CHECKED_OUT' } },
         );
       }
+    }
+    throw error;
+  }
+}
+
+function orderMoney(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+async function resolveOrderCustomer(access: TenantAccess, profile: CounterOrderBody['customer']) {
+  assertCan(access, 'customers.create');
+  const policy = await readPolicy(access.tenantId);
+  const normalized = normalizePhone(profile.phone);
+  if (policy.uniquePhone && normalized) {
+    const existing = await Customer.findOne({ tenantId: access.tenantId, phoneUniqueKey: normalized });
+    if (existing) {
+      if (existing.status !== 'ACTIVE') {
+        throw new HttpError(409, 'customer_inactive', 'A customer with this phone exists and is not active.');
+      }
+      return existing;
+    }
+  }
+  const body: CustomerBody = {
+    fullName: profile.fullName,
+    phone: profile.phone,
+    email: '',
+    dateOfBirth: '',
+    gender: '',
+    address: '',
+    notes: '',
+  };
+  try {
+    const created = await createCustomer(access, body);
+    const customer = await Customer.findOne({ _id: created.id, tenantId: access.tenantId });
+    if (!customer) {
+      throw new HttpError(404, 'not_found', 'Customer was not found.');
+    }
+    return customer;
+  } catch (error) {
+    if (error instanceof HttpError && error.code === 'duplicate_phone' && normalized) {
+      const existing = await Customer.findOne({ tenantId: access.tenantId, phoneUniqueKey: normalized, status: 'ACTIVE' });
+      if (existing) {
+        return existing;
+      }
+    }
+    throw error;
+  }
+}
+
+async function requireOrderBarber(access: TenantAccess, branchId: string, employeeId: string) {
+  const employee = await Employee.findOne({ _id: employeeId, tenantId: access.tenantId });
+  if (!employee) {
+    throw new HttpError(400, 'validation_error', 'Choose a barber from this barbershop.');
+  }
+  assertEmployeeOperational(employee.status);
+  const assignment = await EmployeeBranch.findOne({
+    tenantId: access.tenantId,
+    employeeId,
+    branchId,
+    status: 'ACTIVE',
+  });
+  if (!assignment) {
+    throw new HttpError(409, 'barber_not_assigned', 'This barber is not assigned to the selected branch.');
+  }
+}
+
+async function buildOrderLines(tenantId: string, items: CounterOrderBody['services'], session: ClientSession | null) {
+  const query = Service.find({ tenantId, _id: { $in: items.map((item) => item.serviceId) } });
+  const found = session ? await query.session(session) : await query;
+  const byId = new Map(found.map((service) => [String(service._id), service]));
+  return items.map((item) => {
+    const service = byId.get(item.serviceId);
+    if (!service || service.status !== 'ACTIVE') {
+      throw new HttpError(400, 'validation_error', 'Choose an active service from this barbershop.');
+    }
+    return {
+      serviceId: service._id,
+      serviceNameSnapshot: { en: service.name.en, ar: service.name.ar ?? '' },
+      unitPriceSnapshot: service.price,
+      quantity: item.quantity,
+      commissionTypeSnapshot: service.commissionType,
+      commissionValueSnapshot: service.commissionValue,
+      lineTotal: orderMoney(service.price * item.quantity),
+    };
+  });
+}
+
+async function createReadyAppointment(access: TenantAccess, input: CounterOrderBody, customerId: unknown) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      return await runInTransaction(async (session) => {
+        const lines = await buildOrderLines(access.tenantId, input.services, session);
+        const subtotal = orderMoney(lines.reduce((sum, line) => sum + line.lineTotal, 0));
+        const countQuery = Appointment.countDocuments({ tenantId: access.tenantId });
+        const count = session ? await countQuery.session(session) : await countQuery;
+        const now = new Date();
+        const appointment = new Appointment({
+          tenantId: access.tenantId,
+          branchId: input.branchId,
+          appointmentNumber: `APT-${String(count + 1).padStart(4, '0')}`,
+          customerId,
+          barberEmployeeId: input.barberEmployeeId,
+          extraBarberIds: [],
+          type: 'WALK_IN',
+          scheduledAt: now,
+          services: lines,
+          subtotal,
+          discount: 0,
+          total: subtotal,
+          status: 'COMPLETED',
+          checkoutStatus: 'NOT_CHECKED_OUT',
+          notes: '',
+          cancellationReason: '',
+          createdBy: access.userId,
+          updatedBy: access.userId,
+          startedAt: now,
+          completedAt: now,
+        });
+        await saveDoc(appointment, session);
+        await saveDoc(new AppointmentStatusHistory({
+          tenantId: access.tenantId,
+          branchId: input.branchId,
+          appointmentId: appointment._id,
+          previousStatus: '',
+          newStatus: 'COMPLETED',
+          changedBy: access.userId,
+          reason: 'counter order',
+        }), session);
+        await writeAudit({
+          tenantId: access.tenantId,
+          actorUserId: access.userId,
+          action: 'appointment.counter_order',
+          entityType: 'appointment',
+          entityId: String(appointment._id),
+          summary: `Counter order ${appointment.appointmentNumber} is ready for payment.`,
+        }, session);
+        return String(appointment._id);
+      });
+    } catch (error) {
+      if (hasDuplicateKey(error, 'appointmentNumber') && attempt < 2) {
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw new HttpError(409, 'duplicate_number', 'The appointment number could not be reserved.');
+}
+
+/**
+ * Cashier counter sale: customer name and phone, services, and payment in one step.
+ * A completed walk-in is stored so the existing checkout, shift, and commission rules still apply.
+ */
+export async function createCounterOrder(access: TenantAccess, input: CounterOrderBody) {
+  assertCan(access, 'pos.checkout');
+  const replay = await SaleTransaction.findOne({ tenantId: access.tenantId, idempotencyKey: input.idempotencyKey });
+  if (replay) {
+    return presentSale(access, String(replay._id));
+  }
+  await requireBranch(access, input.branchId, null);
+  await requireOrderBarber(access, input.branchId, input.barberEmployeeId);
+  const customer = await resolveOrderCustomer(access, input.customer);
+  const appointmentId = await createReadyAppointment(access, input, customer._id);
+  try {
+    return await checkout(access, {
+      appointmentId,
+      idempotencyKey: input.idempotencyKey,
+      redemptions: [],
+      additionalDiscount: input.additionalDiscount,
+      payments: input.payments,
+      tips: input.tips,
+      products: input.products,
+    });
+  } catch (error) {
+    const saved = await SaleTransaction.findOne({
+      tenantId: access.tenantId,
+      $or: [{ appointmentId }, { idempotencyKey: input.idempotencyKey }],
+    }).select('_id idempotencyKey');
+    if (saved && saved.idempotencyKey === input.idempotencyKey) {
+      return presentSale(access, String(saved._id));
+    }
+    if (!saved) {
+      await Appointment.deleteOne({
+        _id: appointmentId,
+        tenantId: access.tenantId,
+        checkoutStatus: { $in: ['NOT_CHECKED_OUT', 'CHECKOUT_PENDING'] },
+      });
+      await AppointmentStatusHistory.deleteMany({ tenantId: access.tenantId, appointmentId });
     }
     throw error;
   }

@@ -87,6 +87,7 @@ export interface SaleRecord {
   appointmentId: string;
   customerId: string;
   customerName: string;
+  customerPhone?: string;
   cashierName: string;
   items: Array<{
     itemType: string;

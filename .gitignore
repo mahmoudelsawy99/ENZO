@@ -3,6 +3,7 @@ dist/
 .angular/
 .env
 server/uploads/
+exports/
 *.log
 .DS_Store
 Thumbs.db

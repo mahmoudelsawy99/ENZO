@@ -7,6 +7,7 @@ import {
   approveRefund,
   checkout,
   checkoutContext,
+  createCounterOrder,
   closeShift,
   commissionSummary,
   createRefund,
@@ -20,6 +21,7 @@ import {
 } from './pos.service.js';
 import {
   checkoutSchema,
+  createOrderSchema,
   closeShiftSchema,
   commissionSummarySchema,
   currentShiftSchema,
@@ -48,6 +50,11 @@ posRouter.get('/appointments', requirePermission('pos.view'), validateBody(listP
 posRouter.get('/appointments/:id', requirePermission('pos.view'), validateBody(posAppointmentSchema), asyncHandler(async (req, res) => {
   const { params } = readValidated<z.infer<typeof posAppointmentSchema>>(req);
   res.json({ data: await checkoutContext(readAccess(req), params.id) });
+}));
+
+posRouter.post('/orders', requirePermission('pos.checkout'), validateBody(createOrderSchema), asyncHandler(async (req, res) => {
+  const { body } = readValidated<z.infer<typeof createOrderSchema>>(req);
+  res.status(201).json({ data: await createCounterOrder(readAccess(req), body) });
 }));
 
 posRouter.post('/checkout', requirePermission('pos.checkout'), validateBody(checkoutSchema), asyncHandler(async (req, res) => {

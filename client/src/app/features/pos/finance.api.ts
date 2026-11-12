@@ -34,6 +34,18 @@ export class FinanceApi {
     return this.api.get<{ data: CheckoutContext }>(`/v1/pos/appointments/${appointmentId}`);
   }
 
+  createOrder(body: {
+    branchId: string;
+    barberEmployeeId: string;
+    customer: { fullName: string; phone: string };
+    services: Array<{ serviceId: string; quantity: number }>;
+    idempotencyKey: string;
+    additionalDiscount: number;
+    payments: Array<{ method: string; amount: number; referenceNumber: string }>;
+  }) {
+    return this.api.post<{ data: SaleRecord }>('/v1/pos/orders', body);
+  }
+
   checkout(body: {
     appointmentId: string;
     idempotencyKey: string;

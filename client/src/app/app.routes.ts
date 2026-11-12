@@ -164,6 +164,7 @@ export const routes: Routes = [
           { path: 'payroll/generate', loadComponent: () => import('./features/workforce/payroll-generate.page').then((module) => module.PayrollGeneratePage), data: { titleKey: 'work.generate' } },
           { path: 'payroll/:id/payslip', loadComponent: () => import('./features/workforce/payslip.page').then((module) => module.PayslipPage), data: { titleKey: 'work.payslip' } },
           { path: 'payroll/:id', loadComponent: () => import('./features/workforce/payroll-detail.page').then((module) => module.PayrollDetailPage), data: { titleKey: 'work.review' } },
+          { path: 'pos/new', loadComponent: () => import('./features/pos/pos-order.page').then((module) => module.PosOrderPage), data: { titleKey: 'finance.newOrder' } },
           { path: 'pos/:appointmentId', loadComponent: () => import('./features/pos/pos-checkout.page').then((module) => module.PosCheckoutPage), data: { titleKey: 'finance.checkoutTitle' } },
           { path: 'transactions/:id', loadComponent: () => import('./features/transactions/transaction-detail.page').then((module) => module.TransactionDetailPage), data: { titleKey: 'finance.receipt' } },
           { path: 'users/:id/edit', loadComponent: () => import('./features/users/user-form.page').then((module) => module.UserFormPage), data: { titleKey: 'users.edit' } },

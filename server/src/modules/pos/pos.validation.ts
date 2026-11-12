@@ -142,5 +142,52 @@ export const commissionSummarySchema = z.object({
   params: z.object({}).passthrough(),
 });
 
+const serviceLines = z
+  .array(z.object({ serviceId: objectId, quantity: z.number().int().min(1).max(99) }))
+  .min(1)
+  .max(20)
+  .superRefine((items, context) => {
+    const seen = new Set<string>();
+    for (const item of items) {
+      if (seen.has(item.serviceId)) {
+        context.addIssue({ code: z.ZodIssueCode.custom, message: 'Each service can be added once.', path: ['serviceId'] });
+        return;
+      }
+      seen.add(item.serviceId);
+    }
+  });
+
+export const createOrderSchema = z.object({
+  body: z.object({
+    branchId: objectId,
+    barberEmployeeId: objectId,
+    customer: z.object({
+      fullName: z.string().trim().min(2).max(120),
+      phone: z.string().trim().min(8).max(32),
+    }),
+    services: serviceLines,
+    idempotencyKey: z.string().trim().min(8).max(80),
+    additionalDiscount: money.optional().default(0),
+    payments: z.array(z.object({
+      method: z.enum(PAYMENT_METHODS),
+      amount: money,
+      referenceNumber: z.string().trim().max(80).optional().default(''),
+    })).min(1).max(8),
+    tips: z.array(z.object({
+      employeeId: objectId,
+      amount: z.number().min(0.01).max(1_000_000),
+      method: z.enum(PAYMENT_METHODS),
+      referenceNumber: z.string().trim().max(80).optional().default(''),
+    })).max(8).optional().default([]),
+    products: z.array(z.object({
+      productId: objectId,
+      quantity: z.number().int().min(1).max(999),
+    })).max(30).optional().default([]),
+  }),
+  query: z.object({}).passthrough(),
+  params: z.object({}).passthrough(),
+});
+
 export type CheckoutBody = z.infer<typeof checkoutSchema>['body'];
+export type CounterOrderBody = z.infer<typeof createOrderSchema>['body'];
 export type RefundBody = z.infer<typeof refundCreateSchema>['body'];
