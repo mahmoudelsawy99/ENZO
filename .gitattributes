@@ -1,0 +1,3 @@
+*.sh text eol=lf
+deploy/nginx.conf.template text eol=lf
+deploy/Dockerfile text eol=lf
