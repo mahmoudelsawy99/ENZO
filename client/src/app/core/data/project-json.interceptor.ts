@@ -19,6 +19,8 @@ interface ShopEmployee {
   employeeNumber: string;
   fullName: string;
   userId: string | null;
+  status: string;
+  branches: Array<{ branchId: string; status: string }>;
 }
 
 interface ShopFile {
@@ -92,6 +94,11 @@ async function answer(request: HttpRequest<unknown>) {
   }
   if (method === 'GET' && (path === '/v1/employees' || path.startsWith('/v1/employees?'))) {
     return ok(page(shop.employees));
+  }
+  if (method === 'GET' && path.startsWith('/v1/appointments/barbers')) {
+    const branchId = new URLSearchParams(request.url.includes('?') ? request.url.slice(request.url.indexOf('?') + 1) : '').get('branchId') ?? '';
+    const barbers = shop.employees.filter((employee) => employee.status === 'ACTIVE' && employee.branches.some((branch) => branch.status === 'ACTIVE' && branch.branchId === branchId));
+    return ok({ data: barbers.map((employee) => ({ id: employee.id, fullName: employee.fullName })) });
   }
   if (method === 'GET' && (path === '/v1/service-categories' || path.startsWith('/v1/service-categories?'))) {
     return ok({ data: shop.serviceCategories });
