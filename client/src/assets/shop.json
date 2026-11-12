@@ -1,0 +1,118 @@
+{
+  "branch": {
+    "id": "6aedf5c7d4042507f6a49b05",
+    "name": "Cairo",
+    "code": "CAI",
+    "status": "ACTIVE"
+  },
+  "users": [
+    {
+      "id": "6af5bba3eedf1e7aa256a0d6",
+      "fullName": "Admin",
+      "email": "admin.nile@enzo.test",
+      "phone": "01000000001",
+      "password": "AdminPass1",
+      "userType": "TENANT_USER",
+      "tenantId": "6aedefa6bc1fcc79a33c33b3",
+      "status": "ACTIVE",
+      "isEmailVerified": true,
+      "lastLoginAt": null,
+      "isOwner": true,
+      "branchScope": "ALL",
+      "permissions": [],
+      "roleName": "Owner"
+    },
+    {
+      "id": "6af4790bd5345916d38f5c92",
+      "fullName": "Nile Cashier",
+      "email": "cashier.nile@enzo.test",
+      "phone": "",
+      "password": "Cashier1",
+      "userType": "TENANT_USER",
+      "tenantId": "6aedefa6bc1fcc79a33c33b3",
+      "status": "ACTIVE",
+      "isEmailVerified": true,
+      "lastLoginAt": null,
+      "isOwner": false,
+      "branchScope": "SELECTED",
+      "roleName": "Cashier",
+      "permissions": [
+        "pos.view",
+        "pos.checkout",
+        "pos.apply-discount",
+        "transactions.view",
+        "transactions.create",
+        "payments.view",
+        "payments.create",
+        "payments.apply-discount",
+        "refunds.view",
+        "refunds.create",
+        "cashier-shifts.view",
+        "cashier-shifts.open",
+        "cashier-shifts.close",
+        "tips.view",
+        "tips.manage",
+        "appointments.view",
+        "appointments.create",
+        "appointments.update",
+        "appointments.check-in",
+        "queue.view",
+        "queue.create",
+        "services.view",
+        "customers.view",
+        "customers.create",
+        "packages.view",
+        "packages.assign",
+        "customer-packages.view",
+        "customer-packages.assign",
+        "products.view",
+        "products.create",
+        "inventory.view",
+        "reports.cashier"
+      ]
+    }
+  ],
+  "entitlements": {
+    "unrestricted": true,
+    "status": "ACTIVE",
+    "features": [],
+    "limits": { "branches": 1, "users": 10, "employees": 20, "storageMb": 512 },
+    "usage": { "branches": 1, "users": 2, "employees": 2, "storageMb": null },
+    "subscriptionId": null,
+    "planCode": "LEGACY"
+  },
+  "home": {
+    "owner": {
+      "generatedAt": "2026-11-12T14:00:00.000Z",
+      "from": "2026-11-01",
+      "to": "2026-11-30",
+      "currency": "EGP",
+      "sales": { "gross": 480, "refunds": 0, "net": 480, "transactions": 2 },
+      "branches": [{ "label": "Cairo", "net": 480 }],
+      "customers": { "newCustomers": 2, "returningCustomers": 0 },
+      "employees": [{ "label": "Mahmoud Elsawy", "net": 480 }],
+      "inventory": { "lowStock": 0, "outOfStock": 0 },
+      "attendance": { "LATE": 0, "ABSENT": 0 },
+      "appointmentsToday": 2,
+      "supplierPayments": 0,
+      "cashier": {
+        "metrics": { "expectedCash": 680 },
+        "shifts": [
+          { "status": "OPEN", "expectedCash": 580 },
+          { "status": "CLOSED", "expectedCash": 100 }
+        ]
+      }
+    },
+    "cashier": {
+      "generatedAt": "2026-11-12T14:00:00.000Z",
+      "from": "2026-11-01",
+      "to": "2026-11-30",
+      "currency": "EGP",
+      "appointmentsToday": 2,
+      "cashier": {
+        "metrics": { "expectedCash": 580 },
+        "shifts": [{ "status": "OPEN", "expectedCash": 580 }]
+      }
+    }
+  }
+}
