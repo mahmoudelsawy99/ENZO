@@ -37,6 +37,7 @@ export class FinanceApi {
   createOrder(body: {
     branchId: string;
     barberEmployeeId: string;
+    extraBarberIds?: string[];
     customer: { fullName: string; phone: string };
     services: Array<{ serviceId: string; quantity: number }>;
     idempotencyKey: string;

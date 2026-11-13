@@ -61,6 +61,17 @@ const METHODS = ['CASH', 'VISA', 'WALLET', 'INSTAPAY', 'OTHER'];
             <enzo-text-input formControlName="fullName" [label]="'customers.name' | t" [required]="true" />
             <enzo-text-input formControlName="phone" type="tel" [label]="'customers.phone' | t" [required]="true" />
           </div>
+          <div class="mt-4 grid gap-3" formArrayName="extraBarbers">
+            @for (group of form.controls.extraBarbers.controls; track $index) {
+              <div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]" [formGroupName]="$index">
+                <enzo-select formControlName="barberEmployeeId" [label]="'appointments.extraBarber' | t" [options]="barberOptions()" />
+                <div class="flex items-end">
+                  <button enzoButton type="button" variant="danger" (click)="removeBarber($index)">{{ 'packages.remove' | t }}</button>
+                </div>
+              </div>
+            }
+            <button enzoButton type="button" variant="secondary" (click)="addBarber()">{{ 'appointments.addBarber' | t }}</button>
+          </div>
         </enzo-card>
         <enzo-card [title]="'finance.services' | t">
           <div class="grid gap-3" formArrayName="services">
@@ -125,6 +136,7 @@ export class PosOrderPage {
   readonly form = this.formBuilder.nonNullable.group({
     branchId: [this.branches.selectedId(), Validators.required],
     barberEmployeeId: ['', Validators.required],
+    extraBarbers: this.formBuilder.array<ReturnType<PosOrderPage['barberGroup']>>([]),
     fullName: ['', Validators.required],
     phone: ['', Validators.required],
     additionalDiscount: ['0'],
@@ -251,6 +263,17 @@ export class PosOrderPage {
     this.form.controls.payments.removeAt(index);
   }
 
+  protected addBarber(): void {
+    if (this.form.controls.extraBarbers.length >= 10) {
+      return;
+    }
+    this.form.controls.extraBarbers.push(this.barberGroup());
+  }
+
+  protected removeBarber(index: number): void {
+    this.form.controls.extraBarbers.removeAt(index);
+  }
+
   protected submit(): void {
     const value = this.form.getRawValue();
     const services = value.services
@@ -290,7 +313,10 @@ export class PosOrderPage {
       savedAt: new Date().toISOString(),
       customer: value.fullName.trim(),
       phone,
-      barber: this.barbers().find((barber) => barber.id === value.barberEmployeeId)?.fullName ?? '',
+      barber: [value.barberEmployeeId, ...value.extraBarbers.map((row) => row.barberEmployeeId)]
+        .map((id) => this.barbers().find((barber) => barber.id === id)?.fullName ?? '')
+        .filter((name) => name.length > 0)
+        .join(', '),
       branch: this.branchOptions().find((branch) => branch.value === value.branchId)?.label ?? '',
       discount: Math.round((baseDiscount + extraDiscount) * 100) / 100,
       total,
@@ -312,6 +338,7 @@ export class PosOrderPage {
     this.api.createOrder({
       branchId: value.branchId,
       barberEmployeeId: value.barberEmployeeId,
+      extraBarberIds: value.extraBarbers.map((row) => row.barberEmployeeId).filter((id) => id.length > 0 && id !== value.barberEmployeeId),
       customer: { fullName: value.fullName.trim(), phone },
       services,
       idempotencyKey: this.idempotencyKey,
@@ -360,6 +387,12 @@ export class PosOrderPage {
     this.api.currentShift(branchId).subscribe({
       next: (result) => this.shiftOpen.set(Boolean(result.data)),
       error: () => this.shiftOpen.set(false),
+    });
+  }
+
+  private barberGroup(barberEmployeeId = '') {
+    return this.formBuilder.nonNullable.group({
+      barberEmployeeId: [barberEmployeeId, Validators.required],
     });
   }
 

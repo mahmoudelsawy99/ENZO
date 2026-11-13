@@ -633,7 +633,7 @@ async function createReadyAppointment(access: TenantAccess, input: CounterOrderB
           appointmentNumber: `APT-${String(count + 1).padStart(4, '0')}`,
           customerId,
           barberEmployeeId: input.barberEmployeeId,
-          extraBarberIds: [],
+          extraBarberIds: [...new Set(input.extraBarberIds)].filter((id) => id !== input.barberEmployeeId),
           type: 'WALK_IN',
           scheduledAt: now,
           services: lines,
@@ -691,6 +691,10 @@ export async function createCounterOrder(access: TenantAccess, input: CounterOrd
   }
   await requireBranch(access, input.branchId, null);
   await requireOrderBarber(access, input.branchId, input.barberEmployeeId);
+  const extraBarberIds = [...new Set(input.extraBarberIds)].filter((id) => id !== input.barberEmployeeId);
+  for (const employeeId of extraBarberIds) {
+    await requireOrderBarber(access, input.branchId, employeeId);
+  }
   const customer = await resolveOrderCustomer(access, input.customer);
   const appointmentId = await createReadyAppointment(access, input, customer._id);
   try {

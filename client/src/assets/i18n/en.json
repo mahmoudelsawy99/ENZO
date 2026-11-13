@@ -220,6 +220,7 @@
     "updatePassword": "Update password",
     "backToSignIn": "Back to sign in",
     "failed": "The request could not be completed.",
+    "waking": "The shop server is waking up. Stay on this page for about a minute, then it will try again.",
     "tenantBlocked": "This barbershop cannot access the platform.",
     "accountBlocked": "This account cannot access the platform.",
     "passwordUpdated": "Password updated. Sign in with the new password."

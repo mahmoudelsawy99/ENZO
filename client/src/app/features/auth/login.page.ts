@@ -76,14 +76,27 @@ export class LoginPage {
     }
     this.error.set('');
     this.submitting.set(true);
+    const waiting = window.setTimeout(() => {
+      if (this.submitting()) {
+        this.notice.set(this.i18n.translate('auth.waking'));
+      }
+    }, 2000);
     this.auth.login(this.form.getRawValue()).subscribe({
       next: () => {
+        window.clearTimeout(waiting);
         const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? '';
         void this.router.navigateByUrl(this.safeReturn(returnUrl) ?? this.auth.homeUrl());
       },
       error: (error: unknown) => {
+        window.clearTimeout(waiting);
         this.submitting.set(false);
-        this.error.set(error instanceof ApiError ? error.message : this.i18n.translate('auth.failed'));
+        this.error.set(
+          error instanceof ApiError && error.code === 'server_waking'
+            ? this.i18n.translate('auth.waking')
+            : error instanceof ApiError
+              ? error.message
+              : this.i18n.translate('auth.failed'),
+        );
       },
     });
   }

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { asyncHandler } from '../../shared/async-handler.js';
 import { readValidated, validateBody } from '../../middleware/validate-request.js';
-import { readAccess, requirePermission } from '../access/access.middleware.js';
+import { readAccess, requireAnyPermission, requirePermission } from '../access/access.middleware.js';
 import {
   appointmentHistory,
   cancelAppointment,
@@ -33,7 +33,7 @@ import {
 
 export const appointmentRouter = Router();
 
-appointmentRouter.get('/barbers', requirePermission('appointments.view'), validateBody(barberQuerySchema), asyncHandler(async (req, res) => {
+appointmentRouter.get('/barbers', requireAnyPermission('appointments.view', 'appointments.create', 'pos.view', 'queue.view'), validateBody(barberQuerySchema), asyncHandler(async (req, res) => {
   const { query } = readValidated<z.infer<typeof barberQuerySchema>>(req);
   res.json({ data: await listBarbers(readAccess(req), query.branchId) });
 }));

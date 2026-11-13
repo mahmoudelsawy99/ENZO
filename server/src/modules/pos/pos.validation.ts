@@ -161,6 +161,7 @@ export const createOrderSchema = z.object({
   body: z.object({
     branchId: objectId,
     barberEmployeeId: objectId,
+    extraBarberIds: z.array(objectId).max(10).optional().default([]),
     customer: z.object({
       fullName: z.string().trim().min(2).max(120),
       phone: z.string().trim().min(8).max(32),
