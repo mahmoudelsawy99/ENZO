@@ -1,5 +1,5 @@
 export const environment = {
   production: true,
-  apiUrl: '/api',
-  useProjectJson: true,
+  apiUrl: 'https://enzo-4511d.containers.snapdeploy.app/api',
+  useProjectJson: false,
 };
