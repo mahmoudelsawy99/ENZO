@@ -45,6 +45,18 @@ import { localizedLabel, type CustomerRecord, type ServiceRecord } from '../cata
             }
             <enzo-text-input formControlName="notes" [label]="'appointments.notes' | t" />
           </div>
+          <div class="mt-4 grid gap-3" formArrayName="companions">
+            @for (group of form.controls.companions.controls; track $index) {
+              <div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]" [formGroupName]="$index">
+                <enzo-text-input formControlName="fullName" [label]="'queue.companion' | t" [required]="true" />
+                <enzo-text-input formControlName="phone" type="tel" [label]="'customers.phone' | t" />
+                <div class="flex items-end">
+                  <button enzoButton type="button" variant="danger" (click)="removeCompanion($index)">{{ 'packages.remove' | t }}</button>
+                </div>
+              </div>
+            }
+            <button enzoButton type="button" variant="secondary" (click)="addCompanion()">{{ 'queue.addCompanion' | t }}</button>
+          </div>
           @if (form.controls.mode.value === 'existing') {
             <div class="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
               <enzo-search-input formControlName="customerSearch" [label]="'appointments.customerSearch' | t" />
@@ -118,6 +130,7 @@ export class WalkInPage {
     barberEmployeeId: ['', Validators.required],
     extraBarbers: this.formBuilder.array<ReturnType<WalkInPage['barberGroup']>>([]),
     notes: [''],
+    companions: this.formBuilder.array<ReturnType<WalkInPage['companionGroup']>>([]),
     services: this.formBuilder.array([this.serviceGroup()]),
   });
 
@@ -188,6 +201,17 @@ export class WalkInPage {
     this.form.controls.extraBarbers.removeAt(index);
   }
 
+  protected addCompanion(): void {
+    if (this.form.controls.companions.length >= 8) {
+      return;
+    }
+    this.form.controls.companions.push(this.companionGroup());
+  }
+
+  protected removeCompanion(index: number): void {
+    this.form.controls.companions.removeAt(index);
+  }
+
   private barberGroup(barberEmployeeId = '') {
     return this.formBuilder.nonNullable.group({
       barberEmployeeId: [barberEmployeeId, Validators.required],
@@ -216,6 +240,11 @@ export class WalkInPage {
       this.error.set(this.i18n.translate('queue.customerRequired'));
       return;
     }
+    const companions = value.companions.map((person) => ({ fullName: person.fullName.trim(), phone: person.phone.trim() }));
+    if (companions.some((person) => person.fullName.length > 0 && person.fullName.length < 2)) {
+      this.error.set(this.i18n.translate('queue.customerRequired'));
+      return;
+    }
     this.saving.set(true);
     this.error.set('');
     this.api
@@ -225,6 +254,7 @@ export class WalkInPage {
         extraBarberIds: value.extraBarbers.map((row) => row.barberEmployeeId).filter((id) => id.length > 0),
         services,
         notes: value.notes,
+        companions: companions.filter((person) => person.fullName.length >= 2),
         ...(value.mode === 'existing'
           ? { customerId: value.customerId }
           : {
@@ -240,9 +270,9 @@ export class WalkInPage {
             }),
       })
       .subscribe({
-        next: (result) => {
+        next: () => {
           this.toasts.success(this.i18n.translate('queue.added'));
-          void this.router.navigate(['/appointments', result.data.id]);
+          void this.router.navigate(['/queue']);
         },
         error: (error: unknown) => {
           this.saving.set(false);
@@ -255,6 +285,13 @@ export class WalkInPage {
     this.api.barbers(branchId).subscribe({
       next: (result) => this.barbers.set(result.data),
       error: () => this.barbers.set([]),
+    });
+  }
+
+  private companionGroup() {
+    return this.formBuilder.nonNullable.group({
+      fullName: ['', Validators.required],
+      phone: [''],
     });
   }
 

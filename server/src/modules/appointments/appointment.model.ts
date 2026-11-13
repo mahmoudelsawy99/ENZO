@@ -57,12 +57,21 @@ const serviceLineSchema = new Schema(
   { _id: false },
 );
 
+const companionSchema = new Schema(
+  {
+    fullName: { type: String, required: true, trim: true, maxlength: 120 },
+    phone: { type: String, default: '', trim: true, maxlength: 32 },
+  },
+  { _id: false },
+);
+
 const appointmentSchema = new Schema(
   {
     tenantId: { type: Schema.Types.ObjectId, ref: 'Tenant', required: true, index: true },
     branchId: { type: Schema.Types.ObjectId, ref: 'Branch', required: true, index: true },
     appointmentNumber: { type: String, required: true, trim: true, maxlength: 32 },
     customerId: { type: Schema.Types.ObjectId, ref: 'Customer', required: true, index: true },
+    companions: { type: [companionSchema], default: [] },
     barberEmployeeId: { type: Schema.Types.ObjectId, ref: 'Employee', required: true, index: true },
     extraBarberIds: { type: [{ type: Schema.Types.ObjectId, ref: 'Employee' }], default: [] },
     type: { type: String, required: true, enum: APPOINTMENT_TYPES },

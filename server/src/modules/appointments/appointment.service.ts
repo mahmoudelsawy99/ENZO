@@ -87,6 +87,7 @@ export interface PublicQueueEntry {
   appointmentNumber: string;
   customerId: string;
   customerName: string;
+  companions: string[];
   barberEmployeeId: string;
   barberName: string;
   branchId: string;
@@ -811,6 +812,7 @@ export async function createWalkIn(access: TenantAccess, input: WalkInBody): Pro
         branchId: input.branchId,
         appointmentNumber: await nextNumber(access.tenantId, session),
         customerId: customer._id,
+        companions: input.companions.map((person) => ({ fullName: person.fullName, phone: person.phone })),
         barberEmployeeId: input.barberEmployeeId,
         extraBarberIds: input.extraBarberIds,
         type: 'WALK_IN',
@@ -875,6 +877,7 @@ export async function listQueue(access: TenantAccess, query: ListQueueQuery): Pr
       appointmentNumber: appointment?.appointmentNumber ?? '',
       customerId: String(entry.customerId),
       customerName: customerNames.get(String(entry.customerId)) ?? '',
+      companions: (appointment?.companions ?? []).map((person) => person.fullName),
       barberEmployeeId: String(entry.barberEmployeeId),
       barberName: barberNames.get(String(entry.barberEmployeeId)) ?? '',
       branchId: String(entry.branchId),

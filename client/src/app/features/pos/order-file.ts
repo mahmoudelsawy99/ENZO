@@ -11,6 +11,8 @@ export interface SavedOrder {
   barber: string;
   branch: string;
   discount: number;
+  total: number;
+  cash: number;
   amountDue: number;
   services: SavedOrderLine[];
   payments: Array<{ method: string; amount: number; referenceNumber: string }>;

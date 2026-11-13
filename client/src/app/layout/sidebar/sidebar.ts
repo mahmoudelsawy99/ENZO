@@ -6,7 +6,7 @@ import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { filter, map, startWith } from 'rxjs';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { AuthService } from '../../core/auth/auth.service';
-import { NAV_GROUPS, PLATFORM_NAV } from '../../core/navigation/navigation';
+import { NAV_GROUPS, PLATFORM_NAV, staffHome } from '../../core/navigation/navigation';
 import { Button } from '../../shared/ui/button';
 import { Icon } from '../../shared/ui/icon';
 import { ShellState } from '../shell-state.service';
@@ -140,7 +140,15 @@ export class Sidebar {
       }),
     })).filter((group) => group.items.length > 0);
   });
-  readonly homeLink = computed(() => (this.auth.user()?.userType === 'SUPER_ADMIN' ? '/platform' : '/dashboard'));
+  readonly homeLink = computed(() => {
+    if (this.auth.user()?.userType === 'SUPER_ADMIN') {
+      return '/platform';
+    }
+    if (!this.access.loaded()) {
+      return '/dashboard';
+    }
+    return staffHome((key) => this.access.can(key));
+  });
   private readonly nav = viewChild<ElementRef<HTMLElement>>('nav');
   private readonly router = inject(Router);
   private readonly url = toSignal(

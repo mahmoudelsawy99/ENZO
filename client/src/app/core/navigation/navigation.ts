@@ -21,11 +21,31 @@ export interface NavGroup {
  * Tenant navigation. Items with a permission are hidden when the signed-in user lacks it.
  * Hiding a menu is not a security control. The API enforces every operation.
  */
+/** A cashier who cannot book, manage people, or open reports does not get the dashboard. */
+export const DASHBOARD_ACCESS = ['appointments.view', 'users.view', 'branches.view', 'employees.view', 'reports.view'] as const;
+
+export function seesDashboard(can: (key: string) => boolean): boolean {
+  return DASHBOARD_ACCESS.some((key) => can(key));
+}
+
+export function staffHome(can: (key: string) => boolean): string {
+  if (seesDashboard(can)) {
+    return '/dashboard';
+  }
+  if (can('queue.view')) {
+    return '/queue';
+  }
+  if (can('pos.view')) {
+    return '/pos';
+  }
+  return '/account';
+}
+
 export const NAV_GROUPS: readonly NavGroup[] = [
   {
     labelKey: 'navGroup.operations',
     items: [
-      { path: 'dashboard', labelKey: 'nav.dashboard', descriptionKey: 'pages.dashboard', icon: 'dashboard' },
+      { path: 'dashboard', labelKey: 'nav.dashboard', descriptionKey: 'pages.dashboard', icon: 'dashboard', anyPermissions: DASHBOARD_ACCESS },
       { path: 'appointments', labelKey: 'nav.appointments', descriptionKey: 'pages.appointments', icon: 'calendar', permission: 'appointments.view' },
       { path: 'queue', labelKey: 'nav.queue', descriptionKey: 'pages.queue', icon: 'queue', permission: 'queue.view' },
       { path: 'customers', labelKey: 'nav.customers', descriptionKey: 'pages.customers', icon: 'users', permission: 'customers.view' },

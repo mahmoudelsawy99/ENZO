@@ -1,5 +1,7 @@
-import { Component, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Component, effect, inject, signal } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
+import { TenantAccess } from '../../core/access/tenant-access.service';
+import { staffHome, seesDashboard } from '../../core/navigation/navigation';
 import { LanguageService } from '../../core/i18n/language.service';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { ReportsApi, type HomePayload } from '../reports/reports.api';
@@ -119,12 +121,26 @@ import { PageHeader } from '../../shared/ui/page-header';
 export class DashboardPage {
   private readonly reports = inject(ReportsApi);
   private readonly i18n = inject(LanguageService);
+  private readonly access = inject(TenantAccess);
+  private readonly router = inject(Router);
+  private started = false;
   protected readonly home = signal<HomePayload | null>(null);
   protected readonly loading = signal(true);
   protected readonly error = signal('');
 
   constructor() {
-    this.reload();
+    effect(() => {
+      if (!this.access.loaded() || this.started) {
+        return;
+      }
+      if (!seesDashboard((key) => this.access.can(key))) {
+        this.started = true;
+        void this.router.navigateByUrl(staffHome((key) => this.access.can(key)));
+        return;
+      }
+      this.started = true;
+      this.reload();
+    });
   }
 
   protected reload(): void {

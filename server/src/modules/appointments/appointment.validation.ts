@@ -112,6 +112,16 @@ export const walkInSchema = z.object({
       extraBarberIds,
       services: serviceLines,
       notes: z.string().trim().max(1000).optional().default(''),
+      companions: z
+        .array(
+          z.object({
+            fullName: z.string().trim().min(2).max(120),
+            phone: z.string().trim().max(32).optional().default(''),
+          }),
+        )
+        .max(8)
+        .optional()
+        .default([]),
     })
     .superRefine((value, context) => {
       if (!value.customerId && !value.customer) {

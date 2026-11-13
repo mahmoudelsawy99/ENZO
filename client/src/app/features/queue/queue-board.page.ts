@@ -95,7 +95,7 @@ import type { QueueEntryRecord, QueueStatus } from '../appointments/appointment.
     }
 
     <ng-template #card let-entry>
-      <p class="text-sm font-semibold text-text-primary">{{ entry.position }}. {{ entry.customerName }}</p>
+      <p class="text-sm font-semibold text-text-primary">{{ entry.position }}. {{ party(entry) }}</p>
       <p class="text-xs text-text-secondary">{{ entry.appointmentNumber }} · {{ entry.barberName }}</p>
       <p class="mt-1 text-sm">{{ serviceText(entry) }}</p>
     </ng-template>
@@ -151,6 +151,11 @@ export class QueueBoardPage {
       { value: '', label: this.i18n.translate('queue.allBarbers') },
       ...this.barbers().map((barber) => ({ value: barber.id, label: barber.fullName })),
     ];
+  }
+
+  protected party(entry: QueueEntryRecord): string {
+    const companions = entry.companions ?? [];
+    return companions.length > 0 ? `${entry.customerName}, ${companions.join(', ')}` : entry.customerName;
   }
 
   protected serviceText(entry: QueueEntryRecord): string {

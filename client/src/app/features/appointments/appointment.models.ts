@@ -64,6 +64,7 @@ export interface QueueEntryRecord {
   appointmentNumber: string;
   customerId: string;
   customerName: string;
+  companions?: string[];
   barberEmployeeId: string;
   barberName: string;
   branchId: string;
@@ -101,6 +102,7 @@ export interface WalkInPayload {
   };
   barberEmployeeId: string;
   extraBarberIds?: string[];
+  companions?: Array<{ fullName: string; phone: string }>;
   services: Array<{ serviceId: string; quantity: number }>;
   notes: string;
 }

@@ -75,9 +75,9 @@ const METHODS = ['CASH', 'VISA', 'WALLET', 'INSTAPAY', 'OTHER'];
             }
             <button enzoButton type="button" variant="secondary" (click)="addService()">{{ 'packages.addItem' | t }}</button>
           </div>
-          <div class="mt-3 flex justify-between border-t border-border pt-3 text-sm font-medium">
-            <span>{{ 'finance.amountDue' | t }}</span>
-            <span>{{ money(amountDue()) }}</span>
+          <div class="mt-4 grid gap-3 border-t border-border pt-3 md:grid-cols-2">
+            <enzo-text-input formControlName="totalText" type="number" [label]="'finance.total' | t" />
+            <enzo-text-input formControlName="cashText" type="number" [label]="'finance.cashAmount' | t" />
           </div>
         </enzo-card>
         @if (access.can('pos.apply-discount') || access.can('payments.apply-discount')) {
@@ -117,7 +117,9 @@ export class PosOrderPage {
   readonly barbers = signal<Array<{ id: string; fullName: string }>>([]);
   readonly shiftOpen = signal(true);
   private readonly revision = signal(0);
-  private lastAutoAmount = '';
+  private binding = false;
+  private totalTouched = false;
+  private cashTouched = false;
   private bootstrapped = false;
   private readonly idempotencyKey = crypto.randomUUID();
   readonly form = this.formBuilder.nonNullable.group({
@@ -126,18 +128,36 @@ export class PosOrderPage {
     fullName: ['', Validators.required],
     phone: ['', Validators.required],
     additionalDiscount: ['0'],
+    totalText: ['0'],
+    cashText: ['0'],
     services: this.formBuilder.array([this.serviceGroup()]),
-    payments: this.formBuilder.array<PaymentGroup>([this.paymentGroup()]),
+    payments: this.formBuilder.array<PaymentGroup>([]),
   });
 
   constructor() {
     this.form.controls.services.valueChanges.subscribe(() => {
       this.revision.update((value) => value + 1);
-      this.syncPayment();
+      this.bindAmounts();
     });
     this.form.controls.additionalDiscount.valueChanges.subscribe(() => {
       this.revision.update((value) => value + 1);
-      this.syncPayment();
+      this.bindAmounts();
+    });
+    this.form.controls.totalText.valueChanges.subscribe((value) => {
+      if (this.binding) {
+        return;
+      }
+      this.totalTouched = true;
+      if (!this.cashTouched) {
+        this.binding = true;
+        this.form.controls.cashText.setValue(value, { emitEvent: false });
+        this.binding = false;
+      }
+    });
+    this.form.controls.cashText.valueChanges.subscribe(() => {
+      if (!this.binding) {
+        this.cashTouched = true;
+      }
     });
     this.form.controls.branchId.valueChanges.subscribe((branchId) => {
       this.form.controls.barberEmployeeId.setValue('');
@@ -162,7 +182,7 @@ export class PosOrderPage {
         next: (result) => {
           this.services.set(result.data);
           this.loading.set(false);
-          this.syncPayment();
+          this.bindAmounts();
         },
         error: (error: unknown) => {
           this.loadError.set(error instanceof ApiError ? error.message : this.i18n.translate('common.errorBody'));
@@ -209,7 +229,7 @@ export class PosOrderPage {
   }
 
   protected cashWithoutShift(): boolean {
-    return !this.shiftOpen() && this.form.controls.payments.getRawValue().some((payment) => payment.method === 'CASH' && Number(payment.amount) > 0);
+    return !this.shiftOpen() && Number(this.form.controls.cashText.value) > 0;
   }
 
   protected addService(): void {
@@ -241,23 +261,41 @@ export class PosOrderPage {
       this.error.set(this.i18n.translate('finance.orderInvalid'));
       return;
     }
-    const due = this.amountDue();
-    const payments = value.payments
-      .map((payment) => ({ method: payment.method, amount: Number(payment.amount), referenceNumber: payment.referenceNumber.trim() }))
-      .filter((payment) => payment.amount > 0);
-    if (payments.length === 0 || Math.round(payments.reduce((sum, payment) => sum + payment.amount, 0) * 100) !== Math.round(due * 100)) {
-      this.error.set(this.i18n.translate('finance.paymentMismatch'));
+    const catalogDue = this.amountDue();
+    const total = Math.round((Number(value.totalText) || 0) * 100) / 100;
+    const cash = Math.round((Number(value.cashText) || 0) * 100) / 100;
+    if (total > catalogDue + 0.001) {
+      this.error.set(this.i18n.translate('finance.totalTooHigh'));
       return;
     }
     const canDiscount = this.access.can('pos.apply-discount') || this.access.can('payments.apply-discount');
+    const baseDiscount = canDiscount ? Number(value.additionalDiscount) || 0 : 0;
+    const extraDiscount = Math.round((catalogDue - total) * 100) / 100;
+    if (extraDiscount > 0 && !canDiscount) {
+      this.error.set(this.i18n.translate('finance.totalTooHigh'));
+      return;
+    }
+    const otherPayments = value.payments
+      .map((payment) => ({ method: payment.method, amount: Number(payment.amount), referenceNumber: payment.referenceNumber.trim() }))
+      .filter((payment) => payment.method !== 'CASH' && payment.amount > 0);
+    const payments = cash > 0
+      ? [{ method: 'CASH', amount: cash, referenceNumber: '' }, ...otherPayments]
+      : otherPayments;
+    const paid = Math.round(payments.reduce((sum, payment) => sum + payment.amount, 0) * 100);
+    if (payments.length === 0 || paid !== Math.round(total * 100)) {
+      this.error.set(this.i18n.translate('finance.paymentMismatch'));
+      return;
+    }
     saveOrderFiles({
       savedAt: new Date().toISOString(),
       customer: value.fullName.trim(),
       phone,
       barber: this.barbers().find((barber) => barber.id === value.barberEmployeeId)?.fullName ?? '',
       branch: this.branchOptions().find((branch) => branch.value === value.branchId)?.label ?? '',
-      discount: canDiscount ? Number(value.additionalDiscount) || 0 : 0,
-      amountDue: due,
+      discount: Math.round((baseDiscount + extraDiscount) * 100) / 100,
+      total,
+      cash,
+      amountDue: total,
       services: services.map((line) => {
         const service = this.services().find((item) => item.id === line.serviceId);
         return {
@@ -277,7 +315,7 @@ export class PosOrderPage {
       customer: { fullName: value.fullName.trim(), phone },
       services,
       idempotencyKey: this.idempotencyKey,
-      additionalDiscount: canDiscount ? Number(value.additionalDiscount) || 0 : 0,
+      additionalDiscount: Math.round((baseDiscount + extraDiscount) * 100) / 100,
       payments,
     }).subscribe({
       next: (result) => {
@@ -292,17 +330,17 @@ export class PosOrderPage {
     });
   }
 
-  private syncPayment(): void {
+  private bindAmounts(): void {
     const due = this.amountDue();
-    const text = due > 0 ? String(due) : '';
-    const control = this.form.controls.payments.at(0)?.controls.amount;
-    if (!control || this.form.controls.payments.length !== 1) {
-      return;
+    const text = String(due);
+    this.binding = true;
+    if (!this.totalTouched) {
+      this.form.controls.totalText.setValue(text, { emitEvent: false });
     }
-    if (control.value === '' || control.value === this.lastAutoAmount) {
-      this.lastAutoAmount = text;
-      control.setValue(text, { emitEvent: false });
+    if (!this.cashTouched) {
+      this.form.controls.cashText.setValue(this.totalTouched ? this.form.controls.totalText.value : text, { emitEvent: false });
     }
+    this.binding = false;
   }
 
   private loadBarbers(branchId: string): void {
@@ -333,6 +371,6 @@ export class PosOrderPage {
   }
 
   private paymentGroup(): PaymentGroup {
-    return this.formBuilder.nonNullable.group({ method: 'CASH', amount: '', referenceNumber: '' });
+    return this.formBuilder.nonNullable.group({ method: 'VISA', amount: '', referenceNumber: '' });
   }
 }
