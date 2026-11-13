@@ -16,9 +16,11 @@ import { TextInput } from '../../shared/ui/text-input';
 import { ToastService } from '../../shared/ui/toast.service';
 import { AppointmentApi } from '../appointments/appointment.api';
 import { mergeBarbers, SHOP_BARBERS } from '../appointments/shop-barbers';
+import { SHOP_SERVICES } from '../appointments/shop-services';
 import { CatalogApi } from '../catalog/catalog.api';
 import { localizedLabel, type ServiceRecord } from '../catalog/catalog.models';
 import { PaymentAllocation } from '../payments/payment-allocation';
+import { CashierLocalStore } from './cashier-local.store';
 import { FinanceApi } from './finance.api';
 import type { SaleRecord } from './finance.models';
 import { saveOrderFiles } from './order-file';
@@ -107,6 +109,7 @@ const METHODS = ['CASH', 'VISA', 'WALLET', 'INSTAPAY', 'OTHER'];
 })
 export class PosOrderPage {
   private readonly api = inject(FinanceApi);
+  private readonly local = inject(CashierLocalStore);
   private readonly catalog = inject(CatalogApi);
   private readonly appointments = inject(AppointmentApi);
   private readonly i18n = inject(LanguageService);
@@ -125,7 +128,7 @@ export class PosOrderPage {
   readonly error = signal('');
   readonly loadError = signal('');
   readonly receipt = signal<SaleRecord | null>(null);
-  readonly services = signal<ServiceRecord[]>([]);
+  readonly services = signal<ServiceRecord[]>([...SHOP_SERVICES]);
   readonly barbers = signal<Array<{ id: string; fullName: string }>>([...SHOP_BARBERS]);
   readonly shiftOpen = signal(true);
   private readonly revision = signal(0);
@@ -191,15 +194,17 @@ export class PosOrderPage {
         return;
       }
       this.form.controls.branchId.setValue(branchId, { emitEvent: false });
+      this.services.set(this.local.services());
       this.catalog.services({ page: 1, pageSize: 100, status: 'ACTIVE' }).subscribe({
         next: (result) => {
-          this.services.set(result.data);
+          this.services.set(this.local.rememberServices(result.data));
           this.loading.set(false);
           this.bindAmounts();
         },
-        error: (error: unknown) => {
-          this.loadError.set(error instanceof ApiError ? error.message : this.i18n.translate('common.errorBody'));
+        error: () => {
+          this.services.set(this.local.services());
           this.loading.set(false);
+          this.bindAmounts();
         },
       });
       this.loadBarbers(branchId);
@@ -336,7 +341,7 @@ export class PosOrderPage {
     this.toast.success(this.i18n.translate('finance.orderFileSaved'));
     this.saving.set(true);
     this.error.set('');
-    this.api.createOrder({
+    const orderBody = {
       branchId: value.branchId,
       barberEmployeeId: value.barberEmployeeId,
       extraBarberIds: value.extraBarbers.map((row) => row.barberEmployeeId).filter((id) => id.length > 0 && id !== value.barberEmployeeId),
@@ -345,15 +350,18 @@ export class PosOrderPage {
       idempotencyKey: this.idempotencyKey,
       additionalDiscount: Math.round((baseDiscount + extraDiscount) * 100) / 100,
       payments,
-    }).subscribe({
+    };
+    this.api.createOrder(orderBody).subscribe({
       next: (result) => {
         this.saving.set(false);
         this.receipt.set(result.data);
         this.toast.success(this.i18n.translate('finance.orderSaved'));
       },
-      error: (error: unknown) => {
+      error: () => {
+        const sale = this.local.saveOrder(orderBody);
         this.saving.set(false);
-        this.error.set(error instanceof ApiError ? error.message : this.i18n.translate('common.errorBody'));
+        this.receipt.set(sale);
+        this.toast.success(this.i18n.translate('finance.orderSavedLocal'));
       },
     });
   }
@@ -388,9 +396,13 @@ export class PosOrderPage {
   }
 
   private loadShift(branchId: string): void {
+    this.shiftOpen.set(Boolean(this.local.currentShift(branchId)));
     this.api.currentShift(branchId).subscribe({
-      next: (result) => this.shiftOpen.set(Boolean(result.data)),
-      error: () => this.shiftOpen.set(false),
+      next: (result) => {
+        this.local.rememberShifts(branchId, result.data, this.local.shifts(branchId));
+        this.shiftOpen.set(Boolean(result.data ?? this.local.currentShift(branchId)));
+      },
+      error: () => this.shiftOpen.set(Boolean(this.local.currentShift(branchId))),
     });
   }
 

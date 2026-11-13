@@ -2,10 +2,10 @@ import { Component, effect, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { TenantAccess } from '../../core/access/tenant-access.service';
-import { ApiError } from '../../core/api/api-error';
 import { LanguageService } from '../../core/i18n/language.service';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { BranchContext } from '../../core/session/branch-context.service';
+import { CashierLocalStore } from '../pos/cashier-local.store';
 import { FinanceApi } from '../pos/finance.api';
 import type { ShiftRecord } from '../pos/finance.models';
 import { Badge } from '../../shared/ui/badge';
@@ -106,6 +106,7 @@ import { ToastService } from '../../shared/ui/toast.service';
 })
 export class ShiftBoardPage {
   private readonly api = inject(FinanceApi);
+  private readonly local = inject(CashierLocalStore);
   private readonly i18n = inject(LanguageService);
   private readonly formBuilder = inject(FormBuilder);
   private readonly branches = inject(BranchContext);
@@ -155,18 +156,26 @@ export class ShiftBoardPage {
     }
     this.loading.set(true);
     this.loadError.set('');
+    this.current.set(this.local.currentShift(branchId));
+    this.history.set(this.local.shifts(branchId));
     this.api.currentShift(branchId).subscribe({
-      next: (result) => this.current.set(result.data),
-      error: (error: unknown) => this.loadError.set(error instanceof ApiError ? error.message : this.i18n.translate('common.errorBody')),
+      next: (result) => {
+        this.current.set(result.data ?? this.local.currentShift(branchId));
+        this.local.rememberShifts(branchId, result.data, this.history());
+      },
+      error: () => this.current.set(this.local.currentShift(branchId)),
     });
     this.api.shifts(branchId, 1, 20).subscribe({
       next: (result) => {
-        this.history.set(result.data);
+        this.local.rememberShifts(branchId, this.current(), result.data);
+        this.history.set(this.local.shifts(branchId));
+        this.current.set(this.local.currentShift(branchId));
         this.loading.set(false);
       },
-      error: (error: unknown) => {
+      error: () => {
+        this.history.set(this.local.shifts(branchId));
+        this.current.set(this.local.currentShift(branchId));
         this.loading.set(false);
-        this.loadError.set(error instanceof ApiError ? error.message : this.i18n.translate('common.errorBody'));
       },
     });
   }
@@ -176,15 +185,18 @@ export class ShiftBoardPage {
     const raw = this.openForm.getRawValue();
     this.saving.set(true);
     this.error.set('');
-    this.api.openShift({ branchId, shiftType: raw.shiftType, openingBalance: Number(raw.openingBalance) || 0 }).subscribe({
+    const body = { branchId, shiftType: raw.shiftType, openingBalance: Number(raw.openingBalance) || 0 };
+    this.api.openShift(body).subscribe({
       next: () => {
         this.saving.set(false);
         this.toast.success(this.i18n.translate('finance.shiftOpened'));
         this.load();
       },
-      error: (error: unknown) => {
+      error: () => {
+        this.local.openShift(body);
         this.saving.set(false);
-        this.error.set(error instanceof ApiError ? error.message : this.i18n.translate('common.errorBody'));
+        this.toast.success(this.i18n.translate('finance.shiftOpenedLocal'));
+        this.load();
       },
     });
   }
@@ -192,15 +204,22 @@ export class ShiftBoardPage {
   protected close(id: string): void {
     this.saving.set(true);
     this.error.set('');
-    this.api.closeShift(id, Number(this.closeForm.getRawValue().actualCash) || 0).subscribe({
+    const actualCash = Number(this.closeForm.getRawValue().actualCash) || 0;
+    this.api.closeShift(id, actualCash).subscribe({
       next: () => {
         this.saving.set(false);
         this.toast.success(this.i18n.translate('finance.shiftClosed'));
         this.load();
       },
-      error: (error: unknown) => {
+      error: () => {
+        const closed = this.local.closeShift(id, actualCash);
         this.saving.set(false);
-        this.error.set(error instanceof ApiError ? error.message : this.i18n.translate('common.errorBody'));
+        if (!closed) {
+          this.error.set(this.i18n.translate('common.errorBody'));
+          return;
+        }
+        this.toast.success(this.i18n.translate('finance.shiftClosedLocal'));
+        this.load();
       },
     });
   }

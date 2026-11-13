@@ -4,7 +4,6 @@ import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { TenantAccess } from '../../core/access/tenant-access.service';
-import { ApiError } from '../../core/api/api-error';
 import { LanguageService } from '../../core/i18n/language.service';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { BranchContext } from '../../core/session/branch-context.service';
@@ -20,6 +19,7 @@ import { localizedLabel } from '../catalog/catalog.models';
 import { AppointmentApi } from '../appointments/appointment.api';
 import { mergeBarbers, SHOP_BARBERS } from '../appointments/shop-barbers';
 import type { QueueEntryRecord, QueueStatus } from '../appointments/appointment.models';
+import { CashierLocalStore } from '../pos/cashier-local.store';
 
 @Component({
   selector: 'app-queue-board-page',
@@ -104,6 +104,7 @@ import type { QueueEntryRecord, QueueStatus } from '../appointments/appointment.
 })
 export class QueueBoardPage {
   private readonly api = inject(AppointmentApi);
+  private readonly local = inject(CashierLocalStore);
   private readonly i18n = inject(LanguageService);
   private readonly toasts = inject(ToastService);
   private readonly branches = inject(BranchContext);
@@ -172,11 +173,12 @@ export class QueueBoardPage {
     const others = this.entries().filter((entry) => entry.status !== 'WAITING');
     this.entries.set([...items, ...others]);
     const filters = this.filters.getRawValue();
-    this.api.reorder({ branchId: filters.branchId, queueDate: filters.queueDate, entryIds: items.map((entry) => entry.id) }).subscribe({
-      next: (result) => this.entries.set(result.data),
-      error: (error: unknown) => {
-        this.error.set(error instanceof ApiError ? error.message : this.i18n.translate('queue.reorderFailed'));
-        this.load();
+    const orderedIds = items.map((entry) => entry.id);
+    this.api.reorder({ branchId: filters.branchId, queueDate: filters.queueDate, entryIds: orderedIds }).subscribe({
+      next: (result) => this.entries.set(this.local.rememberQueue(filters.branchId, filters.queueDate, result.data)),
+      error: () => {
+        this.entries.set(this.local.reorderQueue(filters.branchId, filters.queueDate, orderedIds));
+        this.toasts.success(this.i18n.translate('queue.usingLocal'));
       },
     });
   }
@@ -187,7 +189,15 @@ export class QueueBoardPage {
         this.toasts.success(this.i18n.translate('queue.started'));
         this.load();
       },
-      error: (error: unknown) => this.error.set(error instanceof ApiError ? error.message : this.i18n.translate('common.errorTitle')),
+      error: () => {
+        const updated = this.local.updateQueueStatus(entry.id, 'IN_SERVICE');
+        if (updated) {
+          this.entries.set(this.entries().map((item) => (item.id === entry.id ? updated : item)));
+          this.toasts.success(this.i18n.translate('queue.started'));
+          return;
+        }
+        this.error.set(this.i18n.translate('common.errorTitle'));
+      },
     });
   }
 
@@ -197,7 +207,15 @@ export class QueueBoardPage {
         this.toasts.success(this.i18n.translate('queue.completedToast'));
         this.load();
       },
-      error: (error: unknown) => this.error.set(error instanceof ApiError ? error.message : this.i18n.translate('common.errorTitle')),
+      error: () => {
+        const updated = this.local.updateQueueStatus(entry.id, 'COMPLETED');
+        if (updated) {
+          this.entries.set(this.entries().map((item) => (item.id === entry.id ? updated : item)));
+          this.toasts.success(this.i18n.translate('queue.completedToast'));
+          return;
+        }
+        this.error.set(this.i18n.translate('common.errorTitle'));
+      },
     });
   }
 
@@ -213,17 +231,18 @@ export class QueueBoardPage {
     this.loadError.set('');
     this.error.set('');
     this.barbers.set([...SHOP_BARBERS]);
+    this.entries.set(this.local.queue(filters.branchId, filters.queueDate));
     this.api.barbers(filters.branchId).subscribe({
       next: (result) => this.barbers.set(mergeBarbers(result.data)),
       error: () => this.barbers.set([...SHOP_BARBERS]),
     });
     this.api.queue({ branchId: filters.branchId, queueDate: filters.queueDate, barberEmployeeId: filters.barberEmployeeId }).subscribe({
       next: (result) => {
-        this.entries.set(result.data);
+        this.entries.set(this.local.rememberQueue(filters.branchId, filters.queueDate, result.data));
         this.loading.set(false);
       },
-      error: (error: unknown) => {
-        this.loadError.set(error instanceof ApiError ? error.message : this.i18n.translate('common.errorTitle'));
+      error: () => {
+        this.entries.set(this.local.queue(filters.branchId, filters.queueDate));
         this.loading.set(false);
       },
     });

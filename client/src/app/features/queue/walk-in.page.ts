@@ -16,8 +16,10 @@ import { TextInput } from '../../shared/ui/text-input';
 import { ToastService } from '../../shared/ui/toast.service';
 import { AppointmentApi } from '../appointments/appointment.api';
 import { mergeBarbers, SHOP_BARBERS } from '../appointments/shop-barbers';
+import { SHOP_SERVICES } from '../appointments/shop-services';
 import { CatalogApi } from '../catalog/catalog.api';
 import { localizedLabel, type CustomerRecord, type ServiceRecord } from '../catalog/catalog.models';
+import { CashierLocalStore } from '../pos/cashier-local.store';
 
 @Component({
   selector: 'app-walk-in-page',
@@ -102,6 +104,7 @@ import { localizedLabel, type CustomerRecord, type ServiceRecord } from '../cata
 })
 export class WalkInPage {
   private readonly api = inject(AppointmentApi);
+  private readonly local = inject(CashierLocalStore);
   private readonly catalog = inject(CatalogApi);
   private readonly router = inject(Router);
   private readonly i18n = inject(LanguageService);
@@ -118,7 +121,7 @@ export class WalkInPage {
   readonly saving = signal(false);
   readonly error = signal('');
   readonly loadError = signal('');
-  readonly services = signal<ServiceRecord[]>([]);
+  readonly services = signal<ServiceRecord[]>([...SHOP_SERVICES]);
   readonly customers = signal<CustomerRecord[]>([]);
   readonly barbers = signal<Array<{ id: string; fullName: string }>>([...SHOP_BARBERS]);
   readonly form = this.formBuilder.nonNullable.group({
@@ -147,13 +150,14 @@ export class WalkInPage {
         this.loadBarbers(next);
       }
     });
+    this.services.set(this.local.services());
     this.catalog.services({ page: 1, pageSize: 100, status: 'ACTIVE' }).subscribe({
       next: (result) => {
-        this.services.set(result.data);
+        this.services.set(this.local.rememberServices(result.data));
         this.loading.set(false);
       },
-      error: (error: unknown) => {
-        this.loadError.set(error instanceof ApiError ? error.message : this.i18n.translate('common.errorTitle'));
+      error: () => {
+        this.services.set(this.local.services());
         this.loading.set(false);
       },
     });
@@ -248,6 +252,10 @@ export class WalkInPage {
     }
     this.saving.set(true);
     this.error.set('');
+    const customerName =
+      value.mode === 'existing'
+        ? this.customers().find((customer) => customer.id === value.customerId)?.fullName ?? value.customerSearch.trim()
+        : value.fullName.trim();
     this.api
       .walkIn({
         branchId: value.branchId,
@@ -275,9 +283,19 @@ export class WalkInPage {
           this.toasts.success(this.i18n.translate('queue.added'));
           void this.router.navigate(['/queue']);
         },
-        error: (error: unknown) => {
+        error: () => {
+          this.local.saveWalkIn({
+            branchId: value.branchId,
+            barberEmployeeId: value.barberEmployeeId,
+            extraBarberIds: value.extraBarbers.map((row) => row.barberEmployeeId).filter((id) => id.length > 0),
+            customerName: customerName || value.fullName.trim() || 'Walk-in',
+            companions: companions.filter((person) => person.fullName.length >= 2).map((person) => person.fullName),
+            services,
+            notes: value.notes,
+          });
           this.saving.set(false);
-          this.error.set(error instanceof ApiError ? error.message : this.i18n.translate('common.errorTitle'));
+          this.toasts.success(this.i18n.translate('queue.addedLocal'));
+          void this.router.navigate(['/queue']);
         },
       });
   }
