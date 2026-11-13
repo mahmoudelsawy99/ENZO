@@ -15,6 +15,7 @@ import { Select, type SelectOption } from '../../shared/ui/select';
 import { TextInput } from '../../shared/ui/text-input';
 import { ToastService } from '../../shared/ui/toast.service';
 import { AppointmentApi } from '../appointments/appointment.api';
+import { mergeBarbers, SHOP_BARBERS } from '../appointments/shop-barbers';
 import { CatalogApi } from '../catalog/catalog.api';
 import { localizedLabel, type ServiceRecord } from '../catalog/catalog.models';
 import { PaymentAllocation } from '../payments/payment-allocation';
@@ -125,7 +126,7 @@ export class PosOrderPage {
   readonly loadError = signal('');
   readonly receipt = signal<SaleRecord | null>(null);
   readonly services = signal<ServiceRecord[]>([]);
-  readonly barbers = signal<Array<{ id: string; fullName: string }>>([]);
+  readonly barbers = signal<Array<{ id: string; fullName: string }>>([...SHOP_BARBERS]);
   readonly shiftOpen = signal(true);
   private readonly revision = signal(0);
   private binding = false;
@@ -371,16 +372,19 @@ export class PosOrderPage {
   }
 
   private loadBarbers(branchId: string): void {
+    this.applyBarbers(SHOP_BARBERS);
     this.appointments.barbers(branchId).subscribe({
-      next: (result) => {
-        this.barbers.set(result.data);
-        const current = this.form.controls.barberEmployeeId.value;
-        if (!current && result.data[0]) {
-          this.form.controls.barberEmployeeId.setValue(result.data[0].id);
-        }
-      },
-      error: () => this.barbers.set([]),
+      next: (result) => this.applyBarbers(mergeBarbers(result.data)),
+      error: () => this.applyBarbers(SHOP_BARBERS),
     });
+  }
+
+  private applyBarbers(barbers: Array<{ id: string; fullName: string }>): void {
+    this.barbers.set(barbers);
+    const current = this.form.controls.barberEmployeeId.value;
+    if (!current && barbers[0]) {
+      this.form.controls.barberEmployeeId.setValue(barbers[0].id);
+    }
   }
 
   private loadShift(branchId: string): void {

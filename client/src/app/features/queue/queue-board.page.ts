@@ -18,6 +18,7 @@ import { Select, type SelectOption } from '../../shared/ui/select';
 import { ToastService } from '../../shared/ui/toast.service';
 import { localizedLabel } from '../catalog/catalog.models';
 import { AppointmentApi } from '../appointments/appointment.api';
+import { mergeBarbers, SHOP_BARBERS } from '../appointments/shop-barbers';
 import type { QueueEntryRecord, QueueStatus } from '../appointments/appointment.models';
 
 @Component({
@@ -114,7 +115,7 @@ export class QueueBoardPage {
   readonly loadError = signal('');
   readonly error = signal('');
   readonly entries = signal<QueueEntryRecord[]>([]);
-  readonly barbers = signal<Array<{ id: string; fullName: string }>>([]);
+  readonly barbers = signal<Array<{ id: string; fullName: string }>>([...SHOP_BARBERS]);
   readonly filters = this.formBuilder.nonNullable.group({
     branchId: this.branches.selectedId(),
     barberEmployeeId: '',
@@ -211,9 +212,10 @@ export class QueueBoardPage {
     this.loading.set(true);
     this.loadError.set('');
     this.error.set('');
+    this.barbers.set([...SHOP_BARBERS]);
     this.api.barbers(filters.branchId).subscribe({
-      next: (result) => this.barbers.set(result.data),
-      error: () => this.barbers.set([]),
+      next: (result) => this.barbers.set(mergeBarbers(result.data)),
+      error: () => this.barbers.set([...SHOP_BARBERS]),
     });
     this.api.queue({ branchId: filters.branchId, queueDate: filters.queueDate, barberEmployeeId: filters.barberEmployeeId }).subscribe({
       next: (result) => {
