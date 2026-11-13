@@ -133,7 +133,6 @@ export class PosOrderPage {
   readonly shiftOpen = signal(true);
   private readonly revision = signal(0);
   private binding = false;
-  private totalTouched = false;
   private cashTouched = false;
   private bootstrapped = false;
   private readonly idempotencyKey = crypto.randomUUID();
@@ -155,20 +154,10 @@ export class PosOrderPage {
       this.revision.update((value) => value + 1);
       this.bindAmounts();
     });
+    this.form.controls.totalText.disable({ emitEvent: false });
     this.form.controls.additionalDiscount.valueChanges.subscribe(() => {
       this.revision.update((value) => value + 1);
       this.bindAmounts();
-    });
-    this.form.controls.totalText.valueChanges.subscribe((value) => {
-      if (this.binding) {
-        return;
-      }
-      this.totalTouched = true;
-      if (!this.cashTouched) {
-        this.binding = true;
-        this.form.controls.cashText.setValue(value, { emitEvent: false });
-        this.binding = false;
-      }
     });
     this.form.controls.cashText.valueChanges.subscribe(() => {
       if (!this.binding) {
@@ -290,20 +279,10 @@ export class PosOrderPage {
       this.error.set(this.i18n.translate('finance.orderInvalid'));
       return;
     }
-    const catalogDue = this.amountDue();
-    const total = Math.round((Number(value.totalText) || 0) * 100) / 100;
+    const total = this.amountDue();
     const cash = Math.round((Number(value.cashText) || 0) * 100) / 100;
-    if (total > catalogDue + 0.001) {
-      this.error.set(this.i18n.translate('finance.totalTooHigh'));
-      return;
-    }
     const canDiscount = this.access.can('pos.apply-discount') || this.access.can('payments.apply-discount');
-    const baseDiscount = canDiscount ? Number(value.additionalDiscount) || 0 : 0;
-    const extraDiscount = Math.round((catalogDue - total) * 100) / 100;
-    if (extraDiscount > 0 && !canDiscount) {
-      this.error.set(this.i18n.translate('finance.totalTooHigh'));
-      return;
-    }
+    const discount = canDiscount ? Number(value.additionalDiscount) || 0 : 0;
     const otherPayments = value.payments
       .map((payment) => ({ method: payment.method, amount: Number(payment.amount), referenceNumber: payment.referenceNumber.trim() }))
       .filter((payment) => payment.method !== 'CASH' && payment.amount > 0);
@@ -324,7 +303,7 @@ export class PosOrderPage {
         .filter((name) => name.length > 0)
         .join(', '),
       branch: this.branchOptions().find((branch) => branch.value === value.branchId)?.label ?? '',
-      discount: Math.round((baseDiscount + extraDiscount) * 100) / 100,
+      discount: Math.round(discount * 100) / 100,
       total,
       cash,
       amountDue: total,
@@ -348,7 +327,7 @@ export class PosOrderPage {
       customer: { fullName: value.fullName.trim(), phone },
       services,
       idempotencyKey: this.idempotencyKey,
-      additionalDiscount: Math.round((baseDiscount + extraDiscount) * 100) / 100,
+      additionalDiscount: Math.round(discount * 100) / 100,
       payments,
     };
     this.api.createOrder(orderBody).subscribe({
@@ -367,14 +346,11 @@ export class PosOrderPage {
   }
 
   private bindAmounts(): void {
-    const due = this.amountDue();
-    const text = String(due);
+    const text = String(this.amountDue());
     this.binding = true;
-    if (!this.totalTouched) {
-      this.form.controls.totalText.setValue(text, { emitEvent: false });
-    }
+    this.form.controls.totalText.setValue(text, { emitEvent: false });
     if (!this.cashTouched) {
-      this.form.controls.cashText.setValue(this.totalTouched ? this.form.controls.totalText.value : text, { emitEvent: false });
+      this.form.controls.cashText.setValue(text, { emitEvent: false });
     }
     this.binding = false;
   }
