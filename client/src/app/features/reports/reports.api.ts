@@ -1,6 +1,5 @@
-import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { environment } from '../../../environments/environment';
+import { map } from 'rxjs';
 import { ApiClient } from '../../core/api/api-client';
 
 export interface ReportPayload {
@@ -41,7 +40,6 @@ export interface HomePayload {
 @Injectable({ providedIn: 'root' })
 export class ReportsApi {
   private readonly api = inject(ApiClient);
-  private readonly http = inject(HttpClient);
 
   home() {
     return this.api.get<{ data: HomePayload }>('/v1/reports/home');
@@ -52,6 +50,6 @@ export class ReportsApi {
   }
 
   export(kind: string, query: string) {
-    return this.http.get(`${environment.apiUrl}/v1/reports/${kind}/export?${query}`, { responseType: 'blob', observe: 'response' });
+    return this.api.getBlob(`/v1/reports/${kind}/export?${query}`).pipe(map((body) => ({ body })));
   }
 }

@@ -31,6 +31,7 @@ function tenantPage(path: string) {
   if (path === 'reports') return import('./features/reports/reports.page').then((module) => module.ReportsPage);
   if (path === 'whatsapp') return import('./features/whatsapp/whatsapp.page').then((module) => module.WhatsAppPage);
   if (path === 'billing') return import('./features/billing/billing.page').then((module) => module.BillingPage);
+  if (path === 'local-data') return import('./features/local-data/local-data.page').then((module) => module.LocalDataPage);
   return import('./features/placeholder/placeholder.page').then((module) => module.PlaceholderPage);
 }
 

@@ -84,13 +84,15 @@ export const NAV_GROUPS: readonly NavGroup[] = [
   {
     labelKey: 'navGroup.organization',
     items: [
-      { path: 'branches', labelKey: 'nav.branches', descriptionKey: 'pages.branches', icon: 'building', permission: 'branches.view' },
+      // Single branch: the Branches page stays in the app, but it is not shown in the menu.
+      // { path: 'branches', labelKey: 'nav.branches', descriptionKey: 'pages.branches', icon: 'building', permission: 'branches.view' },
       { path: 'users', labelKey: 'nav.users', descriptionKey: 'pages.users', icon: 'user', permission: 'users.view' },
       { path: 'reports', labelKey: 'nav.reports', descriptionKey: 'pages.reports', icon: 'chart', anyPermissions: ['reports.view', 'reports.sales', 'reports.employees', 'reports.customers', 'reports.inventory', 'reports.attendance', 'reports.payroll', 'reports.cashier'] },
       { path: 'whatsapp', labelKey: 'nav.whatsapp', descriptionKey: 'pages.whatsapp', icon: 'bell', anyPermissions: ['whatsapp.settings.view', 'whatsapp.messages.view', 'notifications.settings.manage'], feature: 'whatsapp' },
       { path: 'billing', labelKey: 'nav.billing', descriptionKey: 'pages.billing', icon: 'card', ownerOnly: true },
       { path: 'roles', labelKey: 'nav.roles', descriptionKey: 'pages.roles', icon: 'shield', permission: 'roles.view' },
       { path: 'settings', labelKey: 'nav.settings', descriptionKey: 'pages.settings', icon: 'settings', permission: 'workforce.manage' },
+      { path: 'local-data', labelKey: 'nav.localData', descriptionKey: 'pages.localData', icon: 'inbox', ownerOnly: true },
     ],
   },
 ];

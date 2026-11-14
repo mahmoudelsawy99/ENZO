@@ -24,7 +24,8 @@
     "whatsapp": "WhatsApp",
     "billing": "Subscription",
     "roles": "Roles & Permissions",
-    "settings": "Settings"
+    "settings": "Settings",
+    "localData": "Local data"
   },
   "navGroup": {
     "operations": "Operations",
@@ -59,7 +60,21 @@
     "whatsapp": "WhatsApp Business settings, templates, and message status.",
     "billing": "The ENZO plan for this shop, separate from customer sales.",
     "roles": "Roles and what each role can access.",
-    "settings": "Job titles, employment types, and commission rules."
+    "settings": "Job titles, employment types, and commission rules.",
+    "localData": "IndexedDB on this computer, plus JSON and Excel backups."
+  },
+  "localData": {
+    "security": "Sign-in only stops another person who does not already have this Windows user or this browser profile. Anyone with access to this computer, IndexedDB, or the backup files can read or change sales, payroll, and passwords hashes. This is not cloud security.",
+    "folder": "Backup folder",
+    "choose": "Choose D:\\NileBarbers\\Backup",
+    "backup": "Backup now",
+    "restore": "Restore JSON",
+    "database": "Database",
+    "records": "Records",
+    "json": "JSON",
+    "excel": "Excel",
+    "history": "Backup history",
+    "emptyHistory": "No backup has completed yet."
   },
   "shell": {
     "skip": "Skip to content",
@@ -1461,7 +1476,9 @@
       "discounts": "Discounts",
       "refunds": "Refunds",
       "net": "Net sales",
-      "cash": "Cash sales",
+      "total": "Total",
+      "cash": "Cash amount",
+      "visa": "Visa amount",
       "card": "Card sales",
       "wallet": "Wallet sales",
       "instapay": "InstaPay sales",
@@ -1507,7 +1524,10 @@
       "tips": "Tips",
       "transactions": "Transactions",
       "method": "Method",
+      "cash": "Cash",
+      "visa": "Visa",
       "transaction": "Transaction",
+      "cashier": "Cashier",
       "customer": "Customer",
       "status": "Status",
       "amount": "Amount",

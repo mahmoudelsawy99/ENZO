@@ -1,4 +1,3 @@
-import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { ApiClient } from '../../core/api/api-client';
 import type {
@@ -32,7 +31,6 @@ function query(params: Record<string, string | number | undefined>): string {
 @Injectable({ providedIn: 'root' })
 export class OrganizationApi {
   private readonly api = inject(ApiClient);
-  private readonly http = inject(HttpClient);
 
   access() {
     return this.api.get<{ data: AccessSnapshot }>('/v1/access');
@@ -77,7 +75,7 @@ export class OrganizationApi {
   }
 
   removeBranch(employeeId: string, branchId: string) {
-    return this.http.delete<{ data: EmployeeRecord }>(`${this.api.baseUrl}/v1/employees/${employeeId}/branches/${branchId}`);
+    return this.api.delete<{ data: EmployeeRecord }>(`/v1/employees/${employeeId}/branches/${branchId}`);
   }
 
   primaryBranch(employeeId: string, branchId: string) {
@@ -89,9 +87,7 @@ export class OrganizationApi {
   }
 
   uploadPhoto(file: File) {
-    const body = new FormData();
-    body.append('photo', file);
-    return this.http.post<{ data: { profileImage: string } }>(`${this.api.baseUrl}/v1/employees/photo`, body);
+    return this.api.postFile('/v1/employees/photo', file, 'photo');
   }
 
   employmentTypes() {
@@ -162,11 +158,11 @@ export class OrganizationApi {
   }
 
   resetPassword(id: string, password: string) {
-    return this.http.post(`${this.api.baseUrl}/v1/users/${id}/reset-password`, { password }, { responseType: 'text' });
+    return this.api.postText(`/v1/users/${id}/reset-password`, { password });
   }
 
   revokeSessions(id: string) {
-    return this.http.post(`${this.api.baseUrl}/v1/users/${id}/sessions/revoke`, {}, { responseType: 'text' });
+    return this.api.postText(`/v1/users/${id}/sessions/revoke`, {});
   }
 
   linkEmployee(userId: string, employeeId: string | null) {

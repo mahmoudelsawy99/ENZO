@@ -1,17 +1,15 @@
-import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { environment } from '../../../environments/environment';
+import { ApiClient } from '../../core/api/api-client';
 import type { ApiResponse } from '../../core/auth/auth.models';
 import type { PlatformDashboard, TenantList, TenantPayload, TenantRecord, TenantStatus } from './platform.models';
 
 @Injectable({ providedIn: 'root' })
 export class PlatformApi {
-  private readonly http = inject(HttpClient);
-  private readonly base = `${environment.apiUrl}/v1/platform`;
+  private readonly api = inject(ApiClient);
 
   dashboard(): Promise<PlatformDashboard> {
-    return firstValueFrom(this.http.get<ApiResponse<PlatformDashboard>>(`${this.base}/dashboard`)).then((response) => response.data);
+    return firstValueFrom(this.api.get<ApiResponse<PlatformDashboard>>('/v1/platform/dashboard')).then((response) => response.data);
   }
 
   list(query: { page: number; pageSize: number; search: string; status: string; sort: string; order: string }): Promise<TenantList> {
@@ -25,34 +23,28 @@ export class PlatformApi {
     if (query.status) {
       params.set('status', query.status);
     }
-    return firstValueFrom(this.http.get<TenantList>(`${this.base}/tenants?${params.toString()}`));
+    return firstValueFrom(this.api.get<TenantList>(`/v1/platform/tenants?${params.toString()}`));
   }
 
   get(id: string): Promise<TenantRecord> {
-    return firstValueFrom(this.http.get<ApiResponse<TenantRecord>>(`${this.base}/tenants/${id}`)).then((response) => response.data);
+    return firstValueFrom(this.api.get<ApiResponse<TenantRecord>>(`/v1/platform/tenants/${id}`)).then((response) => response.data);
   }
 
   create(body: TenantPayload, idempotencyKey: string): Promise<TenantRecord> {
-    return firstValueFrom(
-      this.http.post<ApiResponse<TenantRecord>>(`${this.base}/tenants`, body, {
-        headers: { 'Idempotency-Key': idempotencyKey },
-      }),
-    ).then((response) => response.data);
-  }
-
-  update(id: string, body: Omit<TenantPayload, 'owner'> & { owner: Omit<TenantPayload['owner'], 'password'> }): Promise<TenantRecord> {
-    return firstValueFrom(this.http.put<ApiResponse<TenantRecord>>(`${this.base}/tenants/${id}`, body)).then((response) => response.data);
-  }
-
-  setStatus(id: string, status: TenantStatus): Promise<TenantRecord> {
-    return firstValueFrom(this.http.patch<ApiResponse<TenantRecord>>(`${this.base}/tenants/${id}/status`, { status })).then(
+    return firstValueFrom(this.api.post<ApiResponse<TenantRecord>>('/v1/platform/tenants', body, { 'Idempotency-Key': idempotencyKey })).then(
       (response) => response.data,
     );
   }
 
+  update(id: string, body: Omit<TenantPayload, 'owner'> & { owner: Omit<TenantPayload['owner'], 'password'> }): Promise<TenantRecord> {
+    return firstValueFrom(this.api.put<ApiResponse<TenantRecord>>(`/v1/platform/tenants/${id}`, body)).then((response) => response.data);
+  }
+
+  setStatus(id: string, status: TenantStatus): Promise<TenantRecord> {
+    return firstValueFrom(this.api.patch<ApiResponse<TenantRecord>>(`/v1/platform/tenants/${id}/status`, { status })).then((response) => response.data);
+  }
+
   uploadLogo(file: File): Promise<string> {
-    const body = new FormData();
-    body.set('logo', file);
-    return firstValueFrom(this.http.post<ApiResponse<{ logo: string }>>(`${this.base}/uploads/logo`, body)).then((response) => response.data.logo);
+    return firstValueFrom(this.api.postFile('/v1/platform/uploads/logo', file, 'logo')).then((response) => response.data.logo);
   }
 }

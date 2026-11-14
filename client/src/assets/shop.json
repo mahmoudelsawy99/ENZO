@@ -68,7 +68,74 @@
         "products.view",
         "products.create",
         "inventory.view",
-        "reports.cashier"
+        "reports.cashier",
+        "reports.export"
+      ]
+    },
+    {
+      "id": "user-sawy",
+      "fullName": "Sawy",
+      "email": "sawy@enzo.com",
+      "phone": "",
+      "password": "sawy12345",
+      "userType": "TENANT_USER",
+      "tenantId": "6aedefa6bc1fcc79a33c33b3",
+      "status": "ACTIVE",
+      "isEmailVerified": true,
+      "lastLoginAt": null,
+      "isOwner": true,
+      "branchScope": "ALL",
+      "permissions": [],
+      "roleName": "Owner"
+    },
+    {
+      "id": "user-hanan",
+      "fullName": "Hanan",
+      "email": "hanan@enzo.com",
+      "phone": "",
+      "password": "Hanan@2026",
+      "userType": "TENANT_USER",
+      "tenantId": "6aedefa6bc1fcc79a33c33b3",
+      "status": "ACTIVE",
+      "isEmailVerified": true,
+      "lastLoginAt": null,
+      "isOwner": false,
+      "branchScope": "SELECTED",
+      "roleName": "Cashier",
+      "permissions": [
+        "pos.view",
+        "pos.checkout",
+        "pos.apply-discount",
+        "transactions.view",
+        "transactions.create",
+        "payments.view",
+        "payments.create",
+        "payments.apply-discount",
+        "refunds.view",
+        "refunds.create",
+        "cashier-shifts.view",
+        "cashier-shifts.open",
+        "cashier-shifts.close",
+        "tips.view",
+        "tips.manage",
+        "appointments.view",
+        "appointments.create",
+        "appointments.update",
+        "appointments.check-in",
+        "queue.view",
+        "queue.create",
+        "services.view",
+        "customers.view",
+        "customers.create",
+        "packages.view",
+        "packages.assign",
+        "customer-packages.view",
+        "customer-packages.assign",
+        "products.view",
+        "products.create",
+        "inventory.view",
+        "reports.cashier",
+        "reports.export"
       ]
     }
   ],
@@ -84,8 +151,8 @@
     },
     "usage": {
       "branches": 1,
-      "users": 2,
-      "employees": 6,
+      "users": 4,
+      "employees": 5,
       "storageMb": null
     },
     "subscriptionId": null,
@@ -114,10 +181,6 @@
         "returningCustomers": 0
       },
       "employees": [
-        {
-          "label": "Mahmoud Elsawy",
-          "net": 480
-        },
         {
           "label": "Nile Cashier",
           "net": 0
@@ -157,10 +220,6 @@
       "appointmentsToday": 2,
       "employees": [
         {
-          "label": "Mahmoud Elsawy",
-          "net": 480
-        },
-        {
           "label": "Nile Cashier",
           "net": 0
         }
@@ -179,52 +238,6 @@
     }
   },
   "employees": [
-    {
-      "id": "6af0f4edd5345916d38f5c87",
-      "employeeNumber": "123",
-      "fullName": "Mahmoud Elsawy",
-      "email": "mahmoudelsawy048@gmail.com",
-      "phone": "01146752513",
-      "profileImage": "",
-      "nationalIdMasked": "",
-      "address": "",
-      "dateOfBirth": "",
-      "joiningDate": "2026-11-11",
-      "employmentTypeId": "6aedf5a2d4042507f6a49af7",
-      "employmentTypeName": "Full-time",
-      "jobTitleId": "6aedf5a2d4042507f6a49afa",
-      "jobTitleName": "Barber",
-      "userId": null,
-      "user": null,
-      "salary": {
-        "period": "MONTHLY",
-        "basicSalary": 0,
-        "allowances": 0,
-        "tips": 0,
-        "deductions": 0
-      },
-      "salaryFormula": {
-        "gross": "0",
-        "net": "0"
-      },
-      "commissionRules": [],
-      "branches": [
-        {
-          "id": "6af0f4edd5345916d38f5c88",
-          "branchId": "6aedf5c7d4042507f6a49b05",
-          "branchName": "Cairo",
-          "branchCode": "CAI",
-          "branchStatus": "ACTIVE",
-          "status": "ACTIVE",
-          "isPrimary": true,
-          "assignedAt": "2026-11-11T00:00:00.000Z"
-        }
-      ],
-      "status": "ACTIVE",
-      "notes": "",
-      "createdAt": "2026-11-11T00:00:00.000Z",
-      "updatedAt": "2026-11-11T00:00:00.000Z"
-    },
     {
       "id": "6af4790bd5345916d38f5c93",
       "employeeNumber": "CASH-0001",
@@ -1142,7 +1155,7 @@
         "ar": "قص الشعر / الذقن"
       },
       "image": "",
-      "price": 220,
+      "price": 320,
       "commissionType": "PERCENTAGE",
       "commissionValue": 10,
       "status": "ACTIVE",

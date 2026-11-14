@@ -1,4 +1,3 @@
-import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { ApiClient } from '../../core/api/api-client';
 import type {
@@ -28,7 +27,6 @@ function query(params: Record<string, string | number | undefined>): string {
 @Injectable({ providedIn: 'root' })
 export class InventoryApi {
   private readonly api = inject(ApiClient);
-  private readonly http = inject(HttpClient);
 
   categories() {
     return this.api.get<{ data: ProductCategory[] }>('/v1/product-categories');
@@ -57,9 +55,7 @@ export class InventoryApi {
   }
 
   uploadImage(file: File) {
-    const body = new FormData();
-    body.set('image', file);
-    return this.http.post<{ data: { image: string } }>(`${this.api.baseUrl}/v1/products/image`, body);
+    return this.api.postFile('/v1/products/image', file, 'image');
   }
 
   stock(params: { branchId: string; page: number; pageSize: number; search?: string; alert?: string }) {

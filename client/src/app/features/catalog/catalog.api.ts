@@ -1,4 +1,3 @@
-import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { ApiClient } from '../../core/api/api-client';
 import type {
@@ -30,7 +29,6 @@ function query(params: Record<string, string | number | undefined>): string {
 @Injectable({ providedIn: 'root' })
 export class CatalogApi {
   private readonly api = inject(ApiClient);
-  private readonly http = inject(HttpClient);
 
   categories() {
     return this.api.get<{ data: ServiceCategory[] }>('/v1/service-categories');
@@ -67,9 +65,7 @@ export class CatalogApi {
   }
 
   uploadServiceImage(file: File) {
-    const body = new FormData();
-    body.append('image', file);
-    return this.http.post<{ data: { image: string } }>(`${this.api.baseUrl}/v1/services/image`, body);
+    return this.api.postFile('/v1/services/image', file, 'image');
   }
 
   customers(params: { page: number; pageSize: number; search?: string; status?: string }) {
@@ -145,8 +141,6 @@ export class CatalogApi {
   }
 
   uploadPackageImage(file: File) {
-    const body = new FormData();
-    body.append('image', file);
-    return this.http.post<{ data: { image: string } }>(`${this.api.baseUrl}/v1/packages/image`, body);
+    return this.api.postFile('/v1/packages/image', file, 'image');
   }
 }

@@ -1,6 +1,4 @@
 import { Component, inject, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { environment } from '../../../environments/environment';
 import { ApiError } from '../../core/api/api-error';
 import { ApiClient } from '../../core/api/api-client';
 import { EntitlementState } from '../../core/access/entitlement.service';
@@ -60,7 +58,6 @@ interface InvoiceRow {
 })
 export class BillingPage {
   private readonly api = inject(ApiClient);
-  private readonly http = inject(HttpClient);
   private readonly i18n = inject(LanguageService);
   protected readonly entitlements = inject(EntitlementState);
   protected readonly loading = signal(true);
@@ -88,7 +85,7 @@ export class BillingPage {
   }
 
   protected download(row: InvoiceRow): void {
-    this.http.get(`${environment.apiUrl}/v1/billing/invoices/${row.id}/download?format=pdf`, { responseType: 'blob' }).subscribe({
+    this.api.getBlob(`/v1/billing/invoices/${row.id}/download?format=pdf`).subscribe({
       next: (blob) => {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');

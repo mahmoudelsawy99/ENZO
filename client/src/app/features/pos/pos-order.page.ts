@@ -68,7 +68,7 @@ const METHODS = ['CASH', 'VISA', 'WALLET', 'INSTAPAY', 'OTHER'];
             @for (group of form.controls.extraBarbers.controls; track $index) {
               <div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]" [formGroupName]="$index">
                 <enzo-select formControlName="barberEmployeeId" [label]="'appointments.extraBarber' | t" [options]="barberOptions()" />
-                <div class="flex items-end">
+                <div class="flex items-start pt-[1.625rem]">
                   <button enzoButton type="button" variant="danger" (click)="removeBarber($index)">{{ 'packages.remove' | t }}</button>
                 </div>
               </div>
@@ -80,9 +80,9 @@ const METHODS = ['CASH', 'VISA', 'WALLET', 'INSTAPAY', 'OTHER'];
           <div class="grid gap-3" formArrayName="services">
             @for (group of form.controls.services.controls; track $index) {
               <div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_8rem_auto]" [formGroupName]="$index">
-                <enzo-select formControlName="serviceId" [label]="'services.title' | t" [options]="serviceOptions()" />
+                <enzo-select formControlName="serviceId" [label]="'services.title' | t" [options]="serviceOptions()" [searchable]="true" />
                 <enzo-text-input formControlName="quantity" type="number" [label]="'packages.quantity' | t" />
-                <div class="flex items-end">
+                <div class="flex items-start pt-[1.625rem]">
                   <button enzoButton type="button" variant="danger" (click)="removeService($index)">{{ 'packages.remove' | t }}</button>
                 </div>
               </div>
@@ -210,10 +210,13 @@ export class PosOrderPage {
   }
 
   protected serviceOptions(): SelectOption[] {
-    return this.services().map((service) => ({
-      value: service.id,
-      label: `${localizedLabel(service.name, this.i18n.language())} · ${this.money(service.price)}`,
-    }));
+    this.i18n.language();
+    return this.services().map((service) => {
+      const arabic = localizedLabel(service.name, 'ar');
+      const english = localizedLabel(service.name, 'en');
+      const name = arabic === english ? arabic : `${arabic} ${english}`;
+      return { value: service.id, label: `${name} · ${this.money(service.price)}` };
+    });
   }
 
   protected methodOptions(): SelectOption[] {
