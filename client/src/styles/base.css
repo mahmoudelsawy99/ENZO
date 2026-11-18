@@ -220,3 +220,99 @@ html[lang='ar'] .font-display {
     transform: rotate(360deg);
   }
 }
+
+.xprinter-ticket {
+  display: block;
+  box-sizing: border-box;
+  width: 80mm;
+  max-width: 80mm;
+  height: 80mm;
+  max-height: 80mm;
+  overflow: hidden;
+  margin-top: 12px;
+  padding: 3mm;
+  border: 1px dashed #666;
+  background: #fff;
+  color: #000;
+  font-family: "Noto Naskh Arabic", "Noto Sans Arabic", sans-serif;
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.xprinter-ticket h1,
+.xprinter-ticket .ticket-title,
+.xprinter-ticket .ticket-thanks,
+.xprinter-ticket .ticket-width {
+  margin: 0;
+  text-align: center;
+}
+
+.xprinter-ticket h1 {
+  font-size: 16px;
+}
+
+.xprinter-ticket p,
+.xprinter-ticket ul {
+  margin: 0;
+}
+
+.xprinter-ticket ul {
+  margin-top: 6px;
+  padding: 6px 0;
+  border-top: 1px dashed #000;
+  border-bottom: 1px dashed #000;
+  list-style: none;
+}
+
+.xprinter-ticket li,
+.xprinter-ticket .ticket-row,
+.xprinter-ticket .ticket-total {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.xprinter-ticket .ticket-total {
+  margin-top: 4px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.xprinter-ticket .ticket-thanks,
+.xprinter-ticket .ticket-width {
+  margin-top: 8px;
+}
+
+.xprinter-ticket .ticket-width {
+  border-top: 2px solid #000;
+  padding-top: 4px;
+  font-weight: 700;
+}
+
+@media print {
+  @page {
+    size: 80mm 80mm;
+    margin: 0;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  .xprinter-ticket,
+  .xprinter-ticket * {
+    visibility: visible;
+  }
+
+  .xprinter-ticket {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 80mm;
+    max-width: 80mm;
+    height: 80mm;
+    max-height: 80mm;
+    border: 0;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

@@ -2,6 +2,7 @@ export interface SavedOrderLine {
   service: string;
   quantity: number;
   price: number;
+  barber: string;
 }
 
 export interface SavedOrder {
@@ -43,7 +44,7 @@ export function saveOrderFiles(order: SavedOrder): void {
   const stamp = order.savedAt.replaceAll(':', '-').replaceAll('.', '-');
   download(`enzo-order-${stamp}.json`, new Blob([JSON.stringify(order, null, 2)], { type: 'application/json' }));
   const header = ['Saved at', 'Customer', 'Phone', 'Barber', 'Branch', 'Service', 'Quantity', 'Price', 'Discount', 'Amount due', 'Payment method', 'Payment amount', 'Reference'];
-  const lines = order.services.length > 0 ? order.services : [{ service: '', quantity: 0, price: 0 }];
+  const lines = order.services.length > 0 ? order.services : [{ service: '', quantity: 0, price: 0, barber: '' }];
   const rowCount = Math.max(lines.length, order.payments.length, 1);
   const rows = [header];
   for (let index = 0; index < rowCount; index += 1) {
@@ -53,7 +54,7 @@ export function saveOrderFiles(order: SavedOrder): void {
       index === 0 ? order.savedAt : '',
       index === 0 ? order.customer : '',
       index === 0 ? order.phone : '',
-      index === 0 ? order.barber : '',
+      line?.barber || (index === 0 ? order.barber : ''),
       index === 0 ? order.branch : '',
       line?.service ?? '',
       line ? String(line.quantity) : '',

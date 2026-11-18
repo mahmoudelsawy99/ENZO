@@ -15,7 +15,7 @@ export interface LocalOrderInput {
   barberEmployeeId: string;
   extraBarberIds?: string[];
   customer: { fullName: string; phone: string };
-  services: Array<{ serviceId: string; quantity: number }>;
+  services: Array<{ serviceId: string; quantity: number; barberEmployeeId?: string }>;
   idempotencyKey: string;
   additionalDiscount: number;
   payments: Array<{ method: string; amount: number; referenceNumber: string }>;
@@ -55,6 +55,7 @@ export class CashierLocalStore {
     const id = localId('ord');
     const items = input.services.map((line) => {
       const service = catalog.find((item) => item.id === line.serviceId);
+      const barber = SHOP_BARBERS.find((item) => item.id === line.barberEmployeeId);
       const unitPrice = service?.price ?? 0;
       const quantity = line.quantity || 1;
       return {
@@ -63,6 +64,8 @@ export class CashierLocalStore {
         productId: null,
         sku: '',
         serviceName: service?.name ?? { en: line.serviceId, ar: line.serviceId },
+        barberEmployeeId: line.barberEmployeeId ?? input.barberEmployeeId,
+        barberName: barber?.fullName ?? '',
         quantity,
         unitPrice,
         discount: 0,

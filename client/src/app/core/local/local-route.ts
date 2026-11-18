@@ -888,11 +888,18 @@ async function pos(ctx: Ctx) {
 async function createOrder(ctx: Ctx): Promise<Doc> {
   const existing = (await all(ctx.db, 'sales')).find((sale) => str(sale, 'idempotencyKey') === str(ctx.body, 'idempotencyKey'));
   if (existing) return existing;
-  const lines = await priceServiceLines(ctx.db, asList<{ serviceId: string; quantity: number }>(ctx.body['services']));
+  const lines = await priceServiceLines(ctx.db, asList<{ serviceId: string; quantity: number; barberEmployeeId?: string }>(ctx.body['services']));
   if (lines.length === 0) fail(400, 'validation', 'Choose at least one service.');
   const customer = await findOrCreateCustomer(ctx, str(asPayload(ctx.body['customer']), 'fullName'), str(asPayload(ctx.body['customer']), 'phone'));
-  const barber = await one(ctx.db, 'employees', str(ctx.body, 'barberEmployeeId'));
-  const subtotal = roundMoney(lines.reduce((sum, line) => sum + line.lineTotal, 0));
+  const employees = await all(ctx.db, 'employees');
+  const fallbackBarberId = str(ctx.body, 'barberEmployeeId');
+  const priced = lines.map((line) => {
+    const employeeId = line.barberEmployeeId || fallbackBarberId;
+    const employee = employees.find((item) => item.id === employeeId);
+    return { ...line, employeeId, barberName: employee ? str(employee, 'fullName') : '' };
+  });
+  const primary = priced[0];
+  const subtotal = roundMoney(priced.reduce((sum, line) => sum + line.lineTotal, 0));
   const totals = saleTotals(subtotal, 0, num(ctx.body, 'additionalDiscount'), paymentSum(ctx.body));
   const sale = await persistSale(ctx, {
     branchId: str(ctx.body, 'branchId'),
@@ -900,15 +907,15 @@ async function createOrder(ctx: Ctx): Promise<Doc> {
     customerId: customer.id,
     customerName: str(customer, 'fullName'),
     customerPhone: str(customer, 'phone'),
-    barberEmployeeId: str(ctx.body, 'barberEmployeeId'),
-    barberName: barber ? str(barber, 'fullName') : '',
-    items: lines.map((line) => ({ itemType: 'SERVICE', serviceId: line.serviceId, productId: null, sku: '', serviceName: line.serviceName, quantity: line.quantity, unitPrice: line.unitPrice, discount: 0, lineTotal: line.lineTotal })),
+    barberEmployeeId: primary?.employeeId || fallbackBarberId,
+    barberName: primary?.barberName ?? '',
+    items: priced.map((line) => ({ itemType: 'SERVICE', serviceId: line.serviceId, productId: null, sku: '', serviceName: line.serviceName, barberEmployeeId: line.employeeId, barberName: line.barberName, quantity: line.quantity, unitPrice: line.unitPrice, discount: 0, lineTotal: line.lineTotal })),
     subtotal,
     totals,
     payments: asList<Payload>(ctx.body['payments']),
     tips: [],
     idempotencyKey: str(ctx.body, 'idempotencyKey'),
-  }, lines.map((line) => ({ ...line, employeeId: str(ctx.body, 'barberEmployeeId') })));
+  }, priced.map((line) => ({ ...line, employeeId: line.employeeId })));
   return sale;
 }
 
@@ -1769,7 +1776,7 @@ async function checkoutContext(db: NileDatabase, appointmentId: string) {
   };
 }
 
-async function priceServiceLines(db: NileDatabase, lines: Array<{ serviceId: string; quantity: number }>) {
+async function priceServiceLines(db: NileDatabase, lines: Array<{ serviceId: string; quantity: number; barberEmployeeId?: string }>) {
   const catalog = await all(db, 'services');
   return lines.filter((line) => line.serviceId).map((line) => {
     const service = catalog.find((item) => item.id === line.serviceId);
@@ -1783,6 +1790,7 @@ async function priceServiceLines(db: NileDatabase, lines: Array<{ serviceId: str
       serviceName: service ? nameOf(service['name']) : { en: line.serviceId, ar: line.serviceId },
       commissionType: service ? str(service, 'commissionType') || 'PERCENTAGE' : 'PERCENTAGE',
       commissionValue: service ? num(service, 'commissionValue') : 0,
+      barberEmployeeId: line.barberEmployeeId || '',
     };
   });
 }

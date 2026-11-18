@@ -7,7 +7,6 @@ import { LanguageService } from '../../core/i18n/language.service';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { BranchContext } from '../../core/session/branch-context.service';
 import { Button } from '../../shared/ui/button';
-import { Card } from '../../shared/ui/card';
 import { ErrorState } from '../../shared/ui/error-state';
 import { LoadingState } from '../../shared/ui/loading-state';
 import { PageHeader } from '../../shared/ui/page-header';
@@ -32,7 +31,7 @@ const METHODS = ['CASH', 'VISA', 'WALLET', 'INSTAPAY', 'OTHER'];
 
 @Component({
   selector: 'app-pos-order-page',
-  imports: [ReactiveFormsModule, RouterLink, TranslatePipe, PageHeader, Button, Card, TextInput, Select, LoadingState, ErrorState, PaymentAllocation, ReceiptView],
+  imports: [ReactiveFormsModule, RouterLink, TranslatePipe, PageHeader, Button, TextInput, Select, LoadingState, ErrorState, PaymentAllocation, ReceiptView],
   template: `
     <enzo-page-header [title]="'finance.newOrder' | t" [description]="'finance.newOrderDescription' | t" [breadcrumbs]="breadcrumbs">
       <a enzoButton variant="secondary" routerLink="/pos">{{ 'finance.readyTitle' | t }}</a>
@@ -57,51 +56,87 @@ const METHODS = ['CASH', 'VISA', 'WALLET', 'INSTAPAY', 'OTHER'];
             <a class="ms-2 text-brand-gold underline" routerLink="/shifts">{{ 'finance.openShift' | t }}</a>
           </p>
         }
-        <enzo-card [title]="'finance.customer' | t">
-          <div class="grid gap-4 md:grid-cols-2">
-            <enzo-select formControlName="branchId" [label]="'appointments.branch' | t" [options]="branchOptions()" />
-            <enzo-select formControlName="barberEmployeeId" [label]="'finance.barber' | t" [options]="barberOptions()" [required]="true" />
-            <enzo-text-input formControlName="fullName" [label]="'customers.name' | t" [required]="true" />
-            <enzo-text-input formControlName="phone" type="tel" [label]="'customers.phone' | t" [required]="true" />
-          </div>
-          <div class="mt-4 grid gap-3" formArrayName="extraBarbers">
-            @for (group of form.controls.extraBarbers.controls; track $index) {
-              <div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]" [formGroupName]="$index">
-                <enzo-select formControlName="barberEmployeeId" [label]="'appointments.extraBarber' | t" [options]="barberOptions()" />
-                <div class="flex items-start pt-[1.625rem]">
-                  <button enzoButton type="button" variant="danger" (click)="removeBarber($index)">{{ 'packages.remove' | t }}</button>
-                </div>
+        <div class="grid items-stretch gap-4 lg:grid-cols-[26rem_minmax(0,1fr)]" dir="ltr">
+          <section class="flex min-h-[32rem] flex-col overflow-hidden rounded-xl border border-border bg-surface lg:order-2 lg:h-[calc(100vh-9rem)]" [attr.dir]="direction()">
+            <div class="border-b border-border px-4 py-3">
+              <div class="flex items-center justify-between gap-3">
+                <h2 class="text-base font-semibold">{{ 'finance.services' | t }}</h2>
+                <span class="text-xs text-text-secondary">{{ 'finance.tapService' | t }}</span>
               </div>
-            }
-            <button enzoButton type="button" variant="secondary" (click)="addBarber()">{{ 'appointments.addBarber' | t }}</button>
-          </div>
-        </enzo-card>
-        <enzo-card [title]="'finance.services' | t">
-          <div class="grid gap-3" formArrayName="services">
-            @for (group of form.controls.services.controls; track $index) {
-              <div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_8rem_auto]" [formGroupName]="$index">
-                <enzo-select formControlName="serviceId" [label]="'services.title' | t" [options]="serviceOptions()" [searchable]="true" />
-                <enzo-text-input formControlName="quantity" type="number" [label]="'packages.quantity' | t" />
-                <div class="flex items-start pt-[1.625rem]">
-                  <button enzoButton type="button" variant="danger" (click)="removeService($index)">{{ 'packages.remove' | t }}</button>
-                </div>
+              <div class="mt-3 flex gap-2 overflow-x-auto pb-1">
+                <button type="button" class="shrink-0 rounded-full px-3 py-1.5 text-sm" [class.bg-brand-red]="menuCategory() === ''" [class.text-on-brand]="menuCategory() === ''" [class.bg-surface-elevated]="menuCategory() !== ''" [class.text-text-secondary]="menuCategory() !== ''" (click)="menuCategory.set('')">{{ 'finance.menuAll' | t }}</button>
+                @for (category of menuCategories(); track category.id) {
+                  <button type="button" class="shrink-0 rounded-full px-3 py-1.5 text-sm" [class.bg-brand-red]="menuCategory() === category.id" [class.text-on-brand]="menuCategory() === category.id" [class.bg-surface-elevated]="menuCategory() !== category.id" [class.text-text-secondary]="menuCategory() !== category.id" (click)="menuCategory.set(category.id)">{{ category.label }}</button>
+                }
               </div>
-            }
-            <button enzoButton type="button" variant="secondary" (click)="addService()">{{ 'packages.addItem' | t }}</button>
-          </div>
-          <div class="mt-4 grid gap-3 border-t border-border pt-3 md:grid-cols-2">
-            <enzo-text-input formControlName="totalText" type="number" [label]="'finance.total' | t" />
-            <enzo-text-input formControlName="cashText" type="number" [label]="'finance.cashAmount' | t" />
-          </div>
-        </enzo-card>
-        @if (access.can('pos.apply-discount') || access.can('payments.apply-discount')) {
-          <enzo-text-input formControlName="additionalDiscount" type="number" [label]="'finance.additionalDiscount' | t" />
-        }
-        <enzo-card [title]="'finance.payments' | t">
-          <app-payment-allocation [form]="form" [methods]="methodOptions()" (addPayment)="addPayment()" (removePayment)="removePayment($event)" />
-        </enzo-card>
-        <div>
-          <button enzoButton type="submit" [loading]="saving()">{{ 'finance.takePayment' | t }}</button>
+              <input class="enzo-control mt-3" type="search" [attr.placeholder]="'common.search' | t" [attr.aria-label]="'common.search' | t" [value]="menuQuery()" (input)="menuQuery.set(valueOf($event))" />
+            </div>
+            <div class="grid flex-1 content-start grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-2 overflow-auto p-3">
+              @for (service of visibleServices(); track service.id) {
+                <button type="button" class="relative flex min-h-[5.25rem] flex-col justify-between rounded-lg border px-3 py-2.5 text-start transition-colors" [class.border-brand-red]="quantityOf(service.id) > 0" [class.bg-surface-elevated]="quantityOf(service.id) > 0" [class.border-border]="quantityOf(service.id) === 0" [class.bg-surface]="quantityOf(service.id) === 0" (click)="pickService(service)">
+                  <span class="line-clamp-2 pe-6 text-sm font-medium leading-snug">{{ serviceName(service) }}</span>
+                  <span class="text-sm font-semibold text-brand-gold">{{ money(service.price) }}</span>
+                  @if (quantityOf(service.id) > 0) {
+                    <span class="absolute end-2 top-2 grid size-5 place-items-center rounded-full bg-brand-red text-[11px] font-medium text-on-brand">{{ text(quantityOf(service.id)) }}</span>
+                  }
+                </button>
+              }
+            </div>
+          </section>
+          <section class="flex min-h-[32rem] flex-col overflow-hidden rounded-xl border border-border bg-surface lg:order-1 lg:h-[calc(100vh-9rem)]" [attr.dir]="direction()">
+            <header class="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+              <h2 class="text-base font-semibold">{{ 'finance.currentOrder' | t }}</h2>
+              <span class="rounded-full bg-surface-elevated px-2.5 py-1 text-xs text-text-secondary">{{ text(orderLines().length) }}</span>
+            </header>
+            <div class="grid gap-3 border-b border-border px-4 py-3">
+              @if (!singleBranch()) {
+                <enzo-select formControlName="branchId" [label]="'appointments.branch' | t" [options]="branchOptions()" />
+              }
+              <div class="grid gap-3 sm:grid-cols-2">
+                <enzo-text-input formControlName="fullName" [label]="'customers.name' | t" [required]="true" />
+                <enzo-text-input formControlName="phone" type="tel" [label]="'customers.phone' | t" [required]="true" />
+              </div>
+            </div>
+            <div class="grid flex-1 content-start gap-2 overflow-auto p-3" formArrayName="services">
+              @if (orderLines().length === 0) {
+                <p class="px-2 py-8 text-center text-sm text-text-secondary">{{ 'finance.emptyOrder' | t }}</p>
+              }
+              @for (line of orderLines(); track line.serviceId) {
+                <div class="rounded-lg border border-border bg-surface-elevated p-3" [formGroupName]="line.index">
+                  <div class="flex items-start justify-between gap-3">
+                    <span class="text-sm font-medium">{{ line.name }}</span>
+                    <span class="text-sm font-semibold text-brand-gold">{{ money(line.total) }}</span>
+                  </div>
+                  <div class="mt-2 flex items-center gap-2">
+                    <select class="enzo-control h-9 min-w-0 flex-1 text-sm" formControlName="barberEmployeeId" [attr.aria-label]="'finance.barber' | t">
+                      @for (barber of barbers(); track barber.id) {
+                        <option [value]="barber.id">{{ barber.fullName }}</option>
+                      }
+                    </select>
+                    <div class="flex shrink-0 items-center rounded-md border border-border bg-surface">
+                      <button type="button" class="size-9 text-lg leading-none" [attr.aria-label]="'finance.less' | t" (click)="changeQty(line.index, -1)">−</button>
+                      <span class="w-6 text-center text-sm font-medium">{{ text(line.quantity) }}</span>
+                      <button type="button" class="size-9 text-lg leading-none" [attr.aria-label]="'finance.more' | t" (click)="changeQty(line.index, 1)">+</button>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+            <footer class="grid gap-3 border-t border-border bg-surface-elevated p-4">
+              @if (access.can('pos.apply-discount') || access.can('payments.apply-discount')) {
+                <enzo-text-input formControlName="additionalDiscount" type="number" [label]="'finance.additionalDiscount' | t" />
+              }
+              <enzo-text-input formControlName="cashText" type="number" [label]="'finance.cashAmount' | t" />
+              <div class="flex items-end justify-between gap-3">
+                <span class="text-sm text-text-secondary">{{ 'finance.total' | t }}</span>
+                <span class="text-3xl font-semibold leading-none">{{ money(amountDue()) }}</span>
+              </div>
+              <app-payment-allocation [form]="form" [methods]="methodOptions()" [compact]="true" (addPayment)="addPayment()" (removePayment)="removePayment($event)" />
+              <div class="grid">
+                <button enzoButton type="submit" [loading]="saving()">{{ 'finance.takePayment' | t }}</button>
+              </div>
+            </footer>
+          </section>
         </div>
       </form>
     }
@@ -129,6 +164,8 @@ export class PosOrderPage {
   readonly loadError = signal('');
   readonly receipt = signal<SaleRecord | null>(null);
   readonly services = signal<ServiceRecord[]>([...SHOP_SERVICES]);
+  readonly menuCategory = signal('');
+  readonly menuQuery = signal('');
   readonly barbers = signal<Array<{ id: string; fullName: string }>>([...SHOP_BARBERS]);
   readonly shiftOpen = signal(true);
   private readonly revision = signal(0);
@@ -138,14 +175,13 @@ export class PosOrderPage {
   private readonly idempotencyKey = crypto.randomUUID();
   readonly form = this.formBuilder.nonNullable.group({
     branchId: [this.branches.selectedId(), Validators.required],
-    barberEmployeeId: ['', Validators.required],
-    extraBarbers: this.formBuilder.array<ReturnType<PosOrderPage['barberGroup']>>([]),
+    barberEmployeeId: [''],
     fullName: ['', Validators.required],
     phone: ['', Validators.required],
     additionalDiscount: ['0'],
     totalText: ['0'],
     cashText: ['0'],
-    services: this.formBuilder.array([this.serviceGroup()]),
+    services: this.formBuilder.array<ReturnType<PosOrderPage['serviceGroup']>>([]),
     payments: this.formBuilder.array<PaymentGroup>([]),
   });
 
@@ -209,14 +245,88 @@ export class PosOrderPage {
     return this.barbers().map((barber) => ({ value: barber.id, label: barber.fullName }));
   }
 
-  protected serviceOptions(): SelectOption[] {
+  protected menuCategories(): Array<{ id: string; label: string }> {
     this.i18n.language();
-    return this.services().map((service) => {
-      const arabic = localizedLabel(service.name, 'ar');
-      const english = localizedLabel(service.name, 'en');
-      const name = arabic === english ? arabic : `${arabic} ${english}`;
-      return { value: service.id, label: `${name} · ${this.money(service.price)}` };
+    const seen = new Set<string>();
+    const categories: Array<{ id: string; label: string }> = [];
+    for (const service of this.services()) {
+      if (!service.categoryId || seen.has(service.categoryId)) {
+        continue;
+      }
+      seen.add(service.categoryId);
+      categories.push({ id: service.categoryId, label: localizedLabel(service.categoryName, this.i18n.language()) || service.categoryId });
+    }
+    return categories;
+  }
+
+  protected visibleServices(): ServiceRecord[] {
+    const category = this.menuCategory();
+    const query = this.menuQuery().trim().toLowerCase();
+    return this.services().filter((service) => {
+      if (category && service.categoryId !== category) {
+        return false;
+      }
+      if (!query) {
+        return true;
+      }
+      const name = `${localizedLabel(service.name, 'ar')} ${localizedLabel(service.name, 'en')}`.toLowerCase();
+      return name.includes(query);
     });
+  }
+
+  protected serviceName(service: ServiceRecord): string {
+    return localizedLabel(service.name, this.i18n.language());
+  }
+
+  protected quantityOf(serviceId: string): number {
+    this.revision();
+    return this.form.controls.services.controls
+      .filter((group) => group.controls.serviceId.value === serviceId)
+      .reduce((sum, group) => sum + (Number(group.controls.quantity.value) || 0), 0);
+  }
+
+  protected direction(): 'ltr' | 'rtl' {
+    return this.i18n.direction();
+  }
+
+  protected orderLines(): Array<{ index: number; serviceId: string; name: string; quantity: number; total: number }> {
+    this.revision();
+    return this.form.controls.services.controls.flatMap((group, index) => {
+      const service = this.services().find((item) => item.id === group.controls.serviceId.value);
+      if (!service) {
+        return [];
+      }
+      const quantity = Number(group.controls.quantity.value) || 1;
+      return [{ index, serviceId: service.id, name: this.serviceName(service), quantity, total: Math.round(service.price * quantity * 100) / 100 }];
+    });
+  }
+
+  protected pickService(service: ServiceRecord): void {
+    const rows = this.form.controls.services;
+    const existing = rows.controls.find((group) => group.controls.serviceId.value === service.id);
+    if (existing) {
+      existing.controls.quantity.setValue((Number(existing.controls.quantity.value) || 1) + 1);
+      return;
+    }
+    rows.push(this.serviceGroup(service.id, this.defaultBarberId()));
+  }
+
+  protected singleBranch(): boolean {
+    return this.branchOptions().length <= 1;
+  }
+
+  protected changeQty(index: number, delta: number): void {
+    const group = this.form.controls.services.at(index);
+    const next = (Number(group.controls.quantity.value) || 1) + delta;
+    if (next <= 0) {
+      this.form.controls.services.removeAt(index);
+      return;
+    }
+    group.controls.quantity.setValue(next);
+  }
+
+  protected valueOf(event: Event): string {
+    return (event.target as HTMLInputElement).value;
   }
 
   protected methodOptions(): SelectOption[] {
@@ -224,6 +334,10 @@ export class PosOrderPage {
   }
 
   protected money(value: number): string {
+    return this.i18n.formatNumber(value);
+  }
+
+  protected text(value: number): string {
     return this.i18n.formatNumber(value);
   }
 
@@ -242,17 +356,6 @@ export class PosOrderPage {
     return !this.shiftOpen() && Number(this.form.controls.cashText.value) > 0;
   }
 
-  protected addService(): void {
-    this.form.controls.services.push(this.serviceGroup());
-  }
-
-  protected removeService(index: number): void {
-    if (this.form.controls.services.length === 1) {
-      return;
-    }
-    this.form.controls.services.removeAt(index);
-  }
-
   protected addPayment(): void {
     this.form.controls.payments.push(this.paymentGroup());
   }
@@ -261,24 +364,14 @@ export class PosOrderPage {
     this.form.controls.payments.removeAt(index);
   }
 
-  protected addBarber(): void {
-    if (this.form.controls.extraBarbers.length >= 10) {
-      return;
-    }
-    this.form.controls.extraBarbers.push(this.barberGroup());
-  }
-
-  protected removeBarber(index: number): void {
-    this.form.controls.extraBarbers.removeAt(index);
-  }
-
   protected submit(): void {
     const value = this.form.getRawValue();
     const services = value.services
       .filter((line) => line.serviceId)
-      .map((line) => ({ serviceId: line.serviceId, quantity: Number(line.quantity) || 1 }));
+      .map((line) => ({ serviceId: line.serviceId, quantity: Number(line.quantity) || 1, barberEmployeeId: line.barberEmployeeId }));
     const phone = value.phone.trim();
-    if (!value.branchId || !value.barberEmployeeId || value.fullName.trim().length < 2 || phone.length < 8 || services.length === 0) {
+    const primaryBarber = services.find((line) => line.barberEmployeeId)?.barberEmployeeId ?? '';
+    if (!value.branchId || !primaryBarber || services.some((line) => !line.barberEmployeeId) || value.fullName.trim().length < 2 || phone.length < 8 || services.length === 0) {
       this.error.set(this.i18n.translate('finance.orderInvalid'));
       return;
     }
@@ -301,8 +394,8 @@ export class PosOrderPage {
       savedAt: new Date().toISOString(),
       customer: value.fullName.trim(),
       phone,
-      barber: [value.barberEmployeeId, ...value.extraBarbers.map((row) => row.barberEmployeeId)]
-        .map((id) => this.barbers().find((barber) => barber.id === id)?.fullName ?? '')
+      barber: [...new Set(services.map((line) => line.barberEmployeeId))]
+        .map((id) => this.barberName(id))
         .filter((name) => name.length > 0)
         .join(', '),
       branch: this.branchOptions().find((branch) => branch.value === value.branchId)?.label ?? '',
@@ -316,6 +409,7 @@ export class PosOrderPage {
           service: service ? localizedLabel(service.name, this.i18n.language()) : line.serviceId,
           quantity: line.quantity,
           price: service?.price ?? 0,
+          barber: this.barberName(line.barberEmployeeId),
         };
       }),
       payments,
@@ -325,8 +419,8 @@ export class PosOrderPage {
     this.error.set('');
     const orderBody = {
       branchId: value.branchId,
-      barberEmployeeId: value.barberEmployeeId,
-      extraBarberIds: value.extraBarbers.map((row) => row.barberEmployeeId).filter((id) => id.length > 0 && id !== value.barberEmployeeId),
+      barberEmployeeId: primaryBarber,
+      extraBarberIds: [...new Set(services.map((line) => line.barberEmployeeId))].filter((id) => id !== primaryBarber),
       customer: { fullName: value.fullName.trim(), phone },
       services,
       idempotencyKey: this.idempotencyKey,
@@ -368,10 +462,24 @@ export class PosOrderPage {
 
   private applyBarbers(barbers: Array<{ id: string; fullName: string }>): void {
     this.barbers.set(barbers);
-    const current = this.form.controls.barberEmployeeId.value;
-    if (!current && barbers[0]) {
-      this.form.controls.barberEmployeeId.setValue(barbers[0].id);
+    const fallback = barbers[0]?.id ?? '';
+    if (!this.form.controls.barberEmployeeId.value && fallback) {
+      this.form.controls.barberEmployeeId.setValue(fallback);
     }
+    for (const group of this.form.controls.services.controls) {
+      const current = group.controls.barberEmployeeId.value;
+      if (!current || !barbers.some((barber) => barber.id === current)) {
+        group.controls.barberEmployeeId.setValue(fallback);
+      }
+    }
+  }
+
+  private defaultBarberId(): string {
+    return this.form.controls.barberEmployeeId.value || this.barbers()[0]?.id || '';
+  }
+
+  private barberName(id: string): string {
+    return this.barbers().find((barber) => barber.id === id)?.fullName ?? '';
   }
 
   private loadShift(branchId: string): void {
@@ -385,15 +493,10 @@ export class PosOrderPage {
     });
   }
 
-  private barberGroup(barberEmployeeId = '') {
+  private serviceGroup(serviceId = '', barberEmployeeId = '') {
     return this.formBuilder.nonNullable.group({
-      barberEmployeeId: [barberEmployeeId, Validators.required],
-    });
-  }
-
-  private serviceGroup() {
-    return this.formBuilder.nonNullable.group({
-      serviceId: ['', Validators.required],
+      serviceId: [serviceId, Validators.required],
+      barberEmployeeId: [barberEmployeeId],
       quantity: [1, [Validators.required, Validators.min(1)]],
     });
   }

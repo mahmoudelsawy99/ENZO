@@ -95,6 +95,8 @@ export interface SaleRecord {
     productId?: string | null;
     sku?: string;
     serviceName: LocalizedName;
+    barberEmployeeId?: string;
+    barberName?: string;
     quantity: number;
     unitPrice: number;
     discount: number;

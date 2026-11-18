@@ -39,7 +39,7 @@ export class FinanceApi {
     barberEmployeeId: string;
     extraBarberIds?: string[];
     customer: { fullName: string; phone: string };
-    services: Array<{ serviceId: string; quantity: number }>;
+    services: Array<{ serviceId: string; quantity: number; barberEmployeeId?: string }>;
     idempotencyKey: string;
     additionalDiscount: number;
     payments: Array<{ method: string; amount: number; referenceNumber: string }>;
