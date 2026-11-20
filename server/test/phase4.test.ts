@@ -147,8 +147,9 @@ describe('services, customers, and packages', () => {
 
     const limited = await request(app).put('/api/v1/services/settings').set(auth(shopA.ownerToken)).send({ maxCommissionPercent: 10 });
     assert.equal(limited.status, 200);
-    const tooHigh = await request(app).put(`/api/v1/services/${created.body.data.id}`).set(auth(shopA.ownerToken)).send(serviceBody(category.body.data.id, 'Haircut', 180, 25));
-    assert.equal(tooHigh.status, 400);
+    const aboveCap = await request(app).put(`/api/v1/services/${created.body.data.id}`).set(auth(shopA.ownerToken)).send(serviceBody(category.body.data.id, 'Haircut', 180, 25));
+    assert.equal(aboveCap.status, 200);
+    assert.equal(aboveCap.body.data.commissionValue, 25);
     const updated = await request(app).put(`/api/v1/services/${created.body.data.id}`).set(auth(shopA.ownerToken)).send(serviceBody(category.body.data.id, 'Haircut', 180, 10));
     assert.equal(updated.status, 200);
     assert.equal(updated.body.data.price, 180);

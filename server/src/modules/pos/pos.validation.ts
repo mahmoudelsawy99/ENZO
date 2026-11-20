@@ -143,19 +143,13 @@ export const commissionSummarySchema = z.object({
 });
 
 const serviceLines = z
-  .array(z.object({ serviceId: objectId, quantity: z.number().int().min(1).max(99) }))
+  .array(z.object({
+    serviceId: objectId,
+    quantity: z.number().int().min(1).max(99),
+    barberEmployeeId: objectId.optional(),
+  }))
   .min(1)
-  .max(20)
-  .superRefine((items, context) => {
-    const seen = new Set<string>();
-    for (const item of items) {
-      if (seen.has(item.serviceId)) {
-        context.addIssue({ code: z.ZodIssueCode.custom, message: 'Each service can be added once.', path: ['serviceId'] });
-        return;
-      }
-      seen.add(item.serviceId);
-    }
-  });
+  .max(20);
 
 export const createOrderSchema = z.object({
   body: z.object({
@@ -163,8 +157,8 @@ export const createOrderSchema = z.object({
     barberEmployeeId: objectId,
     extraBarberIds: z.array(objectId).max(10).optional().default([]),
     customer: z.object({
-      fullName: z.string().trim().min(2).max(120),
-      phone: z.string().trim().min(8).max(32),
+      fullName: z.string().trim().max(120).optional().default(''),
+      phone: z.string().trim().max(32).optional().default(''),
     }),
     services: serviceLines,
     idempotencyKey: z.string().trim().min(8).max(80),

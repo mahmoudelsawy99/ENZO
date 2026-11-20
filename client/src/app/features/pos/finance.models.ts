@@ -99,6 +99,8 @@ export interface SaleRecord {
     unitPrice: number;
     discount: number;
     lineTotal: number;
+    barberEmployeeId?: string;
+    barberName?: string;
   }>;
   subtotal: number;
   packageDiscount: number;

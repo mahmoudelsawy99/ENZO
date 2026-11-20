@@ -554,7 +554,7 @@ async function resolveOrderCustomer(access: TenantAccess, profile: CounterOrderB
     }
   }
   const body: CustomerBody = {
-    fullName: profile.fullName,
+    fullName: profile.fullName.trim() || 'Walk-in',
     phone: profile.phone,
     email: '',
     dateOfBirth: '',

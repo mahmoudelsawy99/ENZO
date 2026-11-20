@@ -16,7 +16,7 @@ import { TextInput } from '../../shared/ui/text-input';
 import { ToastService } from '../../shared/ui/toast.service';
 import { AppointmentApi } from '../appointments/appointment.api';
 import { mergeBarbers, SHOP_BARBERS } from '../appointments/shop-barbers';
-import { SHOP_SERVICES } from '../appointments/shop-services';
+import { activeServices } from '../appointments/shop-services';
 import { CatalogApi } from '../catalog/catalog.api';
 import { localizedLabel, type CustomerRecord, type ServiceRecord } from '../catalog/catalog.models';
 import { CashierLocalStore } from '../pos/cashier-local.store';
@@ -121,7 +121,7 @@ export class WalkInPage {
   readonly saving = signal(false);
   readonly error = signal('');
   readonly loadError = signal('');
-  readonly services = signal<ServiceRecord[]>([...SHOP_SERVICES]);
+  readonly services = signal<ServiceRecord[]>(activeServices());
   readonly customers = signal<CustomerRecord[]>([]);
   readonly barbers = signal<Array<{ id: string; fullName: string }>>([...SHOP_BARBERS]);
   readonly form = this.formBuilder.nonNullable.group({

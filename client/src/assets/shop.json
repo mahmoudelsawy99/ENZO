@@ -68,8 +68,73 @@
         "products.view",
         "products.create",
         "inventory.view",
-        "reports.cashier"
+        "reports.cashier",
+        "reports.export"
       ]
+    },
+    {
+      "id": "user-sawy",
+      "fullName": "Sawy",
+      "email": "sawy@enzo.com",
+      "phone": "",
+      "password": "sawy12345",
+      "userType": "TENANT_USER",
+      "tenantId": "6aedefa6bc1fcc79a33c33b3",
+      "status": "ACTIVE",
+      "isEmailVerified": true,
+      "lastLoginAt": null,
+      "isOwner": true,
+      "branchScope": "ALL",
+      "permissions": [],
+      "roleName": "Owner"
+    },
+    {
+      "id": "user-hanan",
+      "fullName": "Hanan",
+      "email": "hanan@enzo.com",
+      "phone": "",
+      "password": "Hanan@2026",
+      "userType": "TENANT_USER",
+      "tenantId": "6aedefa6bc1fcc79a33c33b3",
+      "status": "ACTIVE",
+      "isEmailVerified": true,
+      "lastLoginAt": null,
+      "isOwner": false,
+      "branchScope": "SELECTED",
+      "roleName": "Cashier",
+      "permissions": []
+    },
+    {
+      "id": "user-ahmed",
+      "fullName": "Ahmed",
+      "email": "ahmed@enzo.com",
+      "phone": "",
+      "password": "Ahmed@2026",
+      "userType": "TENANT_USER",
+      "tenantId": "6aedefa6bc1fcc79a33c33b3",
+      "status": "ACTIVE",
+      "isEmailVerified": true,
+      "lastLoginAt": null,
+      "isOwner": false,
+      "branchScope": "SELECTED",
+      "roleName": "Cashier",
+      "permissions": []
+    },
+    {
+      "id": "user-metawee",
+      "fullName": "Metawee",
+      "email": "metawee@enzo.com",
+      "phone": "",
+      "password": "Metawee@2026",
+      "userType": "TENANT_USER",
+      "tenantId": "6aedefa6bc1fcc79a33c33b3",
+      "status": "ACTIVE",
+      "isEmailVerified": true,
+      "lastLoginAt": null,
+      "isOwner": false,
+      "branchScope": "SELECTED",
+      "roleName": "Cashier",
+      "permissions": []
     }
   ],
   "entitlements": {
@@ -84,8 +149,8 @@
     },
     "usage": {
       "branches": 1,
-      "users": 2,
-      "employees": 6,
+      "users": 4,
+      "employees": 5,
       "storageMb": null
     },
     "subscriptionId": null,
@@ -114,10 +179,6 @@
         "returningCustomers": 0
       },
       "employees": [
-        {
-          "label": "Mahmoud Elsawy",
-          "net": 480
-        },
         {
           "label": "Nile Cashier",
           "net": 0
@@ -157,10 +218,6 @@
       "appointmentsToday": 2,
       "employees": [
         {
-          "label": "Mahmoud Elsawy",
-          "net": 480
-        },
-        {
           "label": "Nile Cashier",
           "net": 0
         }
@@ -179,52 +236,6 @@
     }
   },
   "employees": [
-    {
-      "id": "6af0f4edd5345916d38f5c87",
-      "employeeNumber": "123",
-      "fullName": "Mahmoud Elsawy",
-      "email": "mahmoudelsawy048@gmail.com",
-      "phone": "01146752513",
-      "profileImage": "",
-      "nationalIdMasked": "",
-      "address": "",
-      "dateOfBirth": "",
-      "joiningDate": "2026-11-11",
-      "employmentTypeId": "6aedf5a2d4042507f6a49af7",
-      "employmentTypeName": "Full-time",
-      "jobTitleId": "6aedf5a2d4042507f6a49afa",
-      "jobTitleName": "Barber",
-      "userId": null,
-      "user": null,
-      "salary": {
-        "period": "MONTHLY",
-        "basicSalary": 0,
-        "allowances": 0,
-        "tips": 0,
-        "deductions": 0
-      },
-      "salaryFormula": {
-        "gross": "0",
-        "net": "0"
-      },
-      "commissionRules": [],
-      "branches": [
-        {
-          "id": "6af0f4edd5345916d38f5c88",
-          "branchId": "6aedf5c7d4042507f6a49b05",
-          "branchName": "Cairo",
-          "branchCode": "CAI",
-          "branchStatus": "ACTIVE",
-          "status": "ACTIVE",
-          "isPrimary": true,
-          "assignedAt": "2026-11-11T00:00:00.000Z"
-        }
-      ],
-      "status": "ACTIVE",
-      "notes": "",
-      "createdAt": "2026-11-11T00:00:00.000Z",
-      "updatedAt": "2026-11-11T00:00:00.000Z"
-    },
     {
       "id": "6af4790bd5345916d38f5c93",
       "employeeNumber": "CASH-0001",
@@ -545,8 +556,8 @@
       },
       "image": "",
       "price": 220,
-      "commissionType": "PERCENTAGE",
-      "commissionValue": 10,
+      "commissionType": "FIXED",
+      "commissionValue": 20,
       "status": "ACTIVE",
       "createdAt": "2026-11-07T23:40:54.846Z",
       "updatedAt": "2026-11-12T15:24:02.771Z"
@@ -568,8 +579,8 @@
       },
       "image": "",
       "price": 220,
-      "commissionType": "PERCENTAGE",
-      "commissionValue": 10,
+      "commissionType": "FIXED",
+      "commissionValue": 20,
       "status": "ACTIVE",
       "createdAt": "2026-11-07T23:40:54.971Z",
       "updatedAt": "2026-11-12T15:24:02.773Z"
@@ -592,7 +603,7 @@
       "image": "",
       "price": 4500,
       "commissionType": "PERCENTAGE",
-      "commissionValue": 10,
+      "commissionValue": 0,
       "status": "ACTIVE",
       "createdAt": "2026-11-07T23:40:55.945Z",
       "updatedAt": "2026-11-12T15:24:02.814Z"
@@ -615,7 +626,7 @@
       "image": "",
       "price": 3500,
       "commissionType": "PERCENTAGE",
-      "commissionValue": 10,
+      "commissionValue": 0,
       "status": "ACTIVE",
       "createdAt": "2026-11-07T23:40:55.886Z",
       "updatedAt": "2026-11-12T15:24:02.805Z"
@@ -638,7 +649,7 @@
       "image": "",
       "price": 6000,
       "commissionType": "PERCENTAGE",
-      "commissionValue": 10,
+      "commissionValue": 0,
       "status": "ACTIVE",
       "createdAt": "2026-11-07T23:40:56.001Z",
       "updatedAt": "2026-11-12T15:24:02.817Z"
@@ -707,7 +718,7 @@
       "image": "",
       "price": 220,
       "commissionType": "PERCENTAGE",
-      "commissionValue": 10,
+      "commissionValue": 0,
       "status": "ACTIVE",
       "createdAt": "2026-11-07T23:40:53.961Z",
       "updatedAt": "2026-11-12T15:24:02.688Z"
@@ -729,8 +740,8 @@
       },
       "image": "",
       "price": 520,
-      "commissionType": "PERCENTAGE",
-      "commissionValue": 10,
+      "commissionType": "FIXED",
+      "commissionValue": 30,
       "status": "ACTIVE",
       "createdAt": "2026-11-07T23:40:55.169Z",
       "updatedAt": "2026-11-12T15:24:02.776Z"
@@ -753,7 +764,7 @@
       "image": "",
       "price": 120,
       "commissionType": "PERCENTAGE",
-      "commissionValue": 10,
+      "commissionValue": 0,
       "status": "ACTIVE",
       "createdAt": "2026-11-07T23:40:53.791Z",
       "updatedAt": "2026-11-12T15:24:02.662Z"
@@ -775,8 +786,8 @@
       },
       "image": "",
       "price": 500,
-      "commissionType": "PERCENTAGE",
-      "commissionValue": 10,
+      "commissionType": "FIXED",
+      "commissionValue": 25,
       "status": "ACTIVE",
       "createdAt": "2026-11-07T23:40:53.309Z",
       "updatedAt": "2026-11-12T15:24:02.565Z"
@@ -798,8 +809,8 @@
       },
       "image": "",
       "price": 500,
-      "commissionType": "PERCENTAGE",
-      "commissionValue": 10,
+      "commissionType": "FIXED",
+      "commissionValue": 25,
       "status": "ACTIVE",
       "createdAt": "2026-11-07T23:40:53.359Z",
       "updatedAt": "2026-11-12T15:24:02.642Z"
@@ -844,8 +855,8 @@
       },
       "image": "",
       "price": 150,
-      "commissionType": "PERCENTAGE",
-      "commissionValue": 10,
+      "commissionType": "FIXED",
+      "commissionValue": 25,
       "status": "ACTIVE",
       "createdAt": "2026-11-07T23:40:54.693Z",
       "updatedAt": "2026-11-12T15:24:02.767Z"
@@ -868,7 +879,7 @@
       "image": "",
       "price": 220,
       "commissionType": "PERCENTAGE",
-      "commissionValue": 10,
+      "commissionValue": 0,
       "status": "ACTIVE",
       "createdAt": "2026-11-07T23:40:54.335Z",
       "updatedAt": "2026-11-12T15:24:02.753Z"
@@ -891,7 +902,7 @@
       "image": "",
       "price": 170,
       "commissionType": "PERCENTAGE",
-      "commissionValue": 10,
+      "commissionValue": 0,
       "status": "ACTIVE",
       "createdAt": "2026-11-07T23:40:53.043Z",
       "updatedAt": "2026-11-12T15:24:02.039Z"
@@ -914,7 +925,7 @@
       "image": "",
       "price": 220,
       "commissionType": "PERCENTAGE",
-      "commissionValue": 10,
+      "commissionValue": 0,
       "status": "ACTIVE",
       "createdAt": "2026-11-07T23:40:54.051Z",
       "updatedAt": "2026-11-12T15:24:02.739Z"
@@ -936,8 +947,8 @@
       },
       "image": "",
       "price": 370,
-      "commissionType": "PERCENTAGE",
-      "commissionValue": 10,
+      "commissionType": "FIXED",
+      "commissionValue": 20,
       "status": "ACTIVE",
       "createdAt": "2026-11-07T23:40:53.999Z",
       "updatedAt": "2026-11-12T15:24:02.709Z"
@@ -960,7 +971,7 @@
       "image": "",
       "price": 120,
       "commissionType": "PERCENTAGE",
-      "commissionValue": 10,
+      "commissionValue": 0,
       "status": "ACTIVE",
       "createdAt": "2026-11-07T23:40:54.502Z",
       "updatedAt": "2026-11-12T15:24:02.762Z"
@@ -983,7 +994,7 @@
       "image": "",
       "price": 180,
       "commissionType": "PERCENTAGE",
-      "commissionValue": 10,
+      "commissionValue": 0,
       "status": "ACTIVE",
       "createdAt": "2026-11-07T23:40:53.130Z",
       "updatedAt": "2026-11-12T15:24:02.104Z"
@@ -1006,7 +1017,7 @@
       "image": "",
       "price": 220,
       "commissionType": "PERCENTAGE",
-      "commissionValue": 10,
+      "commissionValue": 0,
       "status": "ACTIVE",
       "createdAt": "2026-11-07T23:40:54.260Z",
       "updatedAt": "2026-11-12T15:24:02.751Z"
@@ -1028,8 +1039,8 @@
       },
       "image": "",
       "price": 460,
-      "commissionType": "PERCENTAGE",
-      "commissionValue": 10,
+      "commissionType": "FIXED",
+      "commissionValue": 20,
       "status": "ACTIVE",
       "createdAt": "2026-11-07T23:40:54.112Z",
       "updatedAt": "2026-11-12T15:24:02.748Z"
@@ -1075,7 +1086,7 @@
       "image": "",
       "price": 180,
       "commissionType": "PERCENTAGE",
-      "commissionValue": 10,
+      "commissionValue": 0,
       "status": "ACTIVE",
       "createdAt": "2026-11-07T23:40:53.720Z",
       "updatedAt": "2026-11-12T15:24:02.657Z"
@@ -1097,8 +1108,8 @@
       },
       "image": "",
       "price": 520,
-      "commissionType": "PERCENTAGE",
-      "commissionValue": 10,
+      "commissionType": "FIXED",
+      "commissionValue": 20,
       "status": "ACTIVE",
       "createdAt": "2026-11-07T23:40:53.562Z",
       "updatedAt": "2026-11-12T15:24:02.650Z"
@@ -1120,8 +1131,8 @@
       },
       "image": "",
       "price": 370,
-      "commissionType": "PERCENTAGE",
-      "commissionValue": 10,
+      "commissionType": "FIXED",
+      "commissionValue": 20,
       "status": "ACTIVE",
       "createdAt": "2026-11-07T23:40:53.659Z",
       "updatedAt": "2026-11-12T15:24:02.654Z"
@@ -1142,9 +1153,9 @@
         "ar": "قص الشعر / الذقن"
       },
       "image": "",
-      "price": 220,
+      "price": 320,
       "commissionType": "PERCENTAGE",
-      "commissionValue": 10,
+      "commissionValue": 0,
       "status": "ACTIVE",
       "createdAt": "2026-11-07T23:40:52.901Z",
       "updatedAt": "2026-11-12T15:24:01.930Z"
@@ -1167,33 +1178,10 @@
       "image": "",
       "price": 120,
       "commissionType": "PERCENTAGE",
-      "commissionValue": 10,
+      "commissionValue": 0,
       "status": "ACTIVE",
       "createdAt": "2026-11-07T23:40:54.750Z",
       "updatedAt": "2026-11-12T15:24:02.769Z"
-    },
-    {
-      "id": "6aee09fb2579413970c8bca8",
-      "name": {
-        "en": "Haircut",
-        "ar": "قص شعر"
-      },
-      "description": {
-        "en": "",
-        "ar": ""
-      },
-      "categoryId": "6aedfa992579413970c8bca1",
-      "categoryName": {
-        "en": "Hair",
-        "ar": ""
-      },
-      "image": "",
-      "price": 150,
-      "commissionType": "PERCENTAGE",
-      "commissionValue": 10,
-      "status": "ACTIVE",
-      "createdAt": "2026-11-06T17:10:19.819Z",
-      "updatedAt": "2026-11-06T17:10:19.819Z"
     },
     {
       "id": "6aefb705d5345916d38f5c07",
@@ -1213,7 +1201,7 @@
       "image": "",
       "price": 250,
       "commissionType": "PERCENTAGE",
-      "commissionValue": 10,
+      "commissionValue": 0,
       "status": "ACTIVE",
       "createdAt": "2026-11-07T23:40:53.221Z",
       "updatedAt": "2026-11-12T15:24:02.245Z"
@@ -1236,7 +1224,7 @@
       "image": "",
       "price": 220,
       "commissionType": "PERCENTAGE",
-      "commissionValue": 10,
+      "commissionValue": 0,
       "status": "ACTIVE",
       "createdAt": "2026-11-07T23:40:54.549Z",
       "updatedAt": "2026-11-12T15:24:02.764Z"
@@ -1259,7 +1247,7 @@
       "image": "",
       "price": 120,
       "commissionType": "PERCENTAGE",
-      "commissionValue": 10,
+      "commissionValue": 0,
       "status": "ACTIVE",
       "createdAt": "2026-11-07T23:40:55.702Z",
       "updatedAt": "2026-11-12T15:24:02.801Z"
@@ -1282,7 +1270,7 @@
       "image": "",
       "price": 120,
       "commissionType": "PERCENTAGE",
-      "commissionValue": 10,
+      "commissionValue": 0,
       "status": "ACTIVE",
       "createdAt": "2026-11-07T23:40:55.621Z",
       "updatedAt": "2026-11-12T15:24:02.798Z"
@@ -1305,7 +1293,7 @@
       "image": "",
       "price": 460,
       "commissionType": "PERCENTAGE",
-      "commissionValue": 10,
+      "commissionValue": 0,
       "status": "ACTIVE",
       "createdAt": "2026-11-07T23:40:54.407Z",
       "updatedAt": "2026-11-12T15:24:02.756Z"
@@ -1328,7 +1316,7 @@
       "image": "",
       "price": 1200,
       "commissionType": "PERCENTAGE",
-      "commissionValue": 10,
+      "commissionValue": 80,
       "status": "ACTIVE",
       "createdAt": "2026-11-07T23:40:55.236Z",
       "updatedAt": "2026-11-12T15:24:02.778Z"
@@ -1351,7 +1339,7 @@
       "image": "",
       "price": 150,
       "commissionType": "PERCENTAGE",
-      "commissionValue": 10,
+      "commissionValue": 0,
       "status": "ACTIVE",
       "createdAt": "2026-11-07T23:40:55.304Z",
       "updatedAt": "2026-11-12T15:24:02.780Z"
@@ -1374,7 +1362,7 @@
       "image": "",
       "price": 70,
       "commissionType": "PERCENTAGE",
-      "commissionValue": 10,
+      "commissionValue": 0,
       "status": "ACTIVE",
       "createdAt": "2026-11-07T23:40:55.447Z",
       "updatedAt": "2026-11-12T15:24:02.783Z"
@@ -1396,8 +1384,8 @@
       },
       "image": "",
       "price": 220,
-      "commissionType": "PERCENTAGE",
-      "commissionValue": 10,
+      "commissionType": "FIXED",
+      "commissionValue": 20,
       "status": "ACTIVE",
       "createdAt": "2026-11-07T23:40:55.360Z",
       "updatedAt": "2026-11-12T15:24:02.782Z"

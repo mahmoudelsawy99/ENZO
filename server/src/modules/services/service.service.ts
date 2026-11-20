@@ -131,16 +131,6 @@ async function requireCategory(tenantId: string, categoryId: string) {
   return category;
 }
 
-async function assertCommission(tenantId: string, type: ServiceCommissionType, value: number) {
-  if (type !== 'PERCENTAGE') {
-    return;
-  }
-  const policy = await readPolicy(tenantId);
-  if (value > policy.maxCommissionPercent) {
-    throw new HttpError(400, 'validation_error', `Percentage commission cannot exceed ${policy.maxCommissionPercent}.`);
-  }
-}
-
 async function syncCommission(service: InstanceType<typeof Service>) {
   const serviceCode = String(service._id).toUpperCase();
   const serviceName = localized(service.name).en;
@@ -282,7 +272,6 @@ export async function getService(access: TenantAccess, id: string): Promise<Publ
 export async function createService(access: TenantAccess, input: ServiceBody): Promise<PublicService> {
   assertImage(input.image);
   await requireCategory(access.tenantId, input.categoryId);
-  await assertCommission(access.tenantId, input.commissionType, input.commissionValue);
   const name = { en: input.name.en.trim(), ar: input.name.ar.trim() };
   try {
     const service = await Service.create({
@@ -321,7 +310,6 @@ export async function createService(access: TenantAccess, input: ServiceBody): P
 export async function updateService(access: TenantAccess, id: string, input: ServiceBody): Promise<PublicService> {
   assertImage(input.image);
   await requireCategory(access.tenantId, input.categoryId);
-  await assertCommission(access.tenantId, input.commissionType, input.commissionValue);
   const service = await loadService(access.tenantId, id);
   const before = {
     price: service.price,

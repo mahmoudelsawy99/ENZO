@@ -1,10 +1,13 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { TenantAccess } from '../../core/access/tenant-access.service';
 import { ApiError } from '../../core/api/api-error';
+import { isLocalFirst } from '../../core/local/local-mode';
 import { AuthService } from '../../core/auth/auth.service';
 import { LanguageService } from '../../core/i18n/language.service';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
+import { staffHome } from '../../core/navigation/navigation';
 import { Button } from '../../shared/ui/button';
 import { Checkbox } from '../../shared/ui/checkbox';
 import { PasswordInput } from '../../shared/ui/password-input';
@@ -17,7 +20,10 @@ import { AuthLayout } from './auth-layout';
   template: `
     <app-auth-layout>
       <h1 class="font-display text-3xl text-text-primary">{{ 'auth.signIn' | t }}</h1>
-      <p class="mt-2 text-sm leading-6 text-text-secondary">{{ 'auth.signInHint' | t }}</p>
+      <!-- <p class="mt-2 text-sm leading-6 text-text-secondary">{{ 'auth.signInHint' | t }}</p> -->
+      @if (localMode) {
+        <!-- <p class="mt-3 text-xs leading-5 text-text-secondary">{{ 'localData.accounts' | t }} {{ 'localData.security' | t }}</p> -->
+      }
 
       @if (notice()) {
         <p class="mt-4 rounded-md border border-border bg-surface-elevated px-3 py-2 text-sm text-text-primary" role="status">
@@ -34,8 +40,8 @@ import { AuthLayout } from './auth-layout';
         <enzo-text-input formControlName="email" type="email" autocomplete="username" [label]="'auth.email' | t" [required]="true" />
         <enzo-password-input formControlName="password" autocomplete="current-password" [label]="'auth.password' | t" [required]="true" />
         <div class="flex items-center justify-between gap-3">
-          <enzo-checkbox formControlName="rememberMe" [label]="'auth.rememberMe' | t" />
-          <a class="text-sm text-text-secondary hover:text-text-primary" routerLink="/forgot-password">{{ 'auth.forgot' | t }}</a>
+          <!-- <enzo-checkbox formControlName="rememberMe" [label]="'auth.rememberMe' | t" /> -->
+          <!-- <a class="text-sm text-text-secondary hover:text-text-primary" routerLink="/forgot-password">{{ 'auth.forgot' | t }}</a> -->
         </div>
         <button enzoButton type="submit" [loading]="submitting()" [disabled]="form.invalid">{{ 'auth.signIn' | t }}</button>
       </form>
@@ -45,10 +51,12 @@ import { AuthLayout } from './auth-layout';
 export class LoginPage {
   private readonly formBuilder = inject(FormBuilder);
   private readonly auth = inject(AuthService);
+  private readonly access = inject(TenantAccess);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly i18n = inject(LanguageService);
 
+  protected readonly localMode = isLocalFirst();
   readonly submitting = signal(false);
   readonly error = signal('');
   readonly notice = signal('');
@@ -76,16 +84,29 @@ export class LoginPage {
     }
     this.error.set('');
     this.submitting.set(true);
-    const waiting = window.setTimeout(() => {
-      if (this.submitting()) {
-        this.notice.set(this.i18n.translate('auth.waking'));
-      }
-    }, 2000);
+    const waiting = this.localMode
+      ? 0
+      : window.setTimeout(() => {
+          if (this.submitting()) {
+            this.notice.set(this.i18n.translate('auth.waking'));
+          }
+        }, 2000);
     this.auth.login(this.form.getRawValue()).subscribe({
       next: () => {
         window.clearTimeout(waiting);
         const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? '';
-        void this.router.navigateByUrl(this.safeReturn(returnUrl) ?? this.auth.homeUrl());
+        const safe = this.safeReturn(returnUrl);
+        if (safe) {
+          void this.router.navigateByUrl(safe);
+          return;
+        }
+        if (this.auth.user()?.userType === 'SUPER_ADMIN') {
+          void this.router.navigateByUrl(this.auth.homeUrl());
+          return;
+        }
+        void this.access.reload().then(() => {
+          void this.router.navigateByUrl(staffHome((key) => this.access.can(key)));
+        });
       },
       error: (error: unknown) => {
         window.clearTimeout(waiting);

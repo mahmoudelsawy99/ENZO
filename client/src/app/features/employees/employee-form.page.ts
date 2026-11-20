@@ -22,7 +22,7 @@ import type { AccessSnapshot, CatalogItem } from '../organization/organization.m
   imports: [ReactiveFormsModule, RouterLink, TranslatePipe, PageHeader, Card, TextInput, Select, DateField, Button, LoadingState, ErrorState],
   template: `
     <enzo-page-header [title]="titleKey() | t" [description]="'employees.formDescription' | t" [breadcrumbs]="breadcrumbs()" />
-    <ol class="mb-6 grid gap-2 sm:grid-cols-4">
+    <ol class="mb-6 grid gap-2 sm:grid-cols-3">
       @for (label of stepKeys; track label; let index = $index) {
         <li class="rounded-md border px-3 py-2 text-sm" [class.border-brand-red]="step() === index" [class.bg-surface]="step() === index" [class.border-border]="step() !== index" [attr.aria-current]="step() === index ? 'step' : null">
           {{ index + 1 }}. {{ label | t }}
@@ -72,6 +72,7 @@ import type { AccessSnapshot, CatalogItem } from '../organization/organization.m
             </div>
           </enzo-card>
         }
+        <!-- Single branch is assigned automatically, so this step is not shown.
         @if (step() === 2) {
           <enzo-card [title]="'employees.branches' | t" [description]="'employees.branchesHint' | t">
             @if (branchChoices().length === 0) {
@@ -93,7 +94,8 @@ import type { AccessSnapshot, CatalogItem } from '../organization/organization.m
             </ul>
           </enzo-card>
         }
-        @if (step() === 3) {
+        -->
+        @if (step() === 2) {
           <enzo-card [title]="'employees.salary' | t" [description]="'employees.salaryHint' | t">
             <div class="grid gap-4 md:grid-cols-2" formGroupName="salary">
               <enzo-select formControlName="period" [label]="'employees.period' | t" [options]="periodOptions()" />
@@ -109,7 +111,7 @@ import type { AccessSnapshot, CatalogItem } from '../organization/organization.m
           @if (step() > 0) {
             <button enzoButton type="button" variant="secondary" (click)="step.set(step() - 1)">{{ 'common.previous' | t }}</button>
           }
-          <button enzoButton type="submit" [loading]="saving()">{{ (step() === 3 ? 'common.save' : 'common.next') | t }}</button>
+          <button enzoButton type="submit" [loading]="saving()">{{ (step() === 2 ? 'common.save' : 'common.next') | t }}</button>
           <a enzoButton variant="ghost" routerLink="/employees">{{ 'common.cancel' | t }}</a>
         </div>
       </form>
@@ -124,7 +126,7 @@ export class EmployeeFormPage {
   private readonly toasts = inject(ToastService);
   private readonly formBuilder = inject(FormBuilder);
 
-  readonly stepKeys = ['employees.personal', 'employees.employment', 'employees.branches', 'employees.salary'];
+  readonly stepKeys = ['employees.personal', 'employees.employment', 'employees.salary'];
   readonly step = signal(0);
   readonly loading = signal(true);
   readonly saving = signal(false);
@@ -248,7 +250,7 @@ export class EmployeeFormPage {
       this.form.markAllAsTouched();
       return;
     }
-    if (this.step() < 3) {
+    if (this.step() < 2) {
       this.step.update((value) => value + 1);
       return;
     }
@@ -256,7 +258,7 @@ export class EmployeeFormPage {
   }
 
   private save(): void {
-    const selected = this.selectedBranches();
+    const selected = this.selectedBranches().length > 0 ? this.selectedBranches() : this.branchChoices().map((branch) => branch.id);
     const primary = this.primaryId() || selected[0] || '';
     const value = this.form.getRawValue();
     const salary = value.salary;

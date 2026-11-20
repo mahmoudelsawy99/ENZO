@@ -48,7 +48,7 @@ import type { EmployeeRecord } from '../organization/organization.models';
                 <th class="px-4 py-3 text-start text-xs font-medium" scope="col">{{ 'employees.number' | t }}</th>
                 <th class="px-4 py-3 text-start text-xs font-medium" scope="col">{{ 'employees.name' | t }}</th>
                 <th class="px-4 py-3 text-start text-xs font-medium" scope="col">{{ 'employees.jobTitle' | t }}</th>
-                <th class="px-4 py-3 text-start text-xs font-medium" scope="col">{{ 'employees.branches' | t }}</th>
+                <!-- Branch column is hidden. This shop has one branch. -->
                 <th class="px-4 py-3 text-start text-xs font-medium" scope="col">{{ 'employees.status' | t }}</th>
                 <th class="px-4 py-3 text-start text-xs font-medium" scope="col">{{ 'common.actions' | t }}</th>
               </tr>
@@ -59,7 +59,6 @@ import type { EmployeeRecord } from '../organization/organization.models';
                   <td class="px-4 py-3">{{ employee.employeeNumber }}</td>
                   <td class="px-4 py-3 font-medium text-text-primary">{{ employee.fullName }}</td>
                   <td class="px-4 py-3">{{ employee.jobTitleName }}</td>
-                  <td class="px-4 py-3">{{ branchLabel(employee) }}</td>
                   <td class="px-4 py-3"><enzo-badge [tone]="tone(employee.status)">{{ 'status.' + employee.status | t }}</enzo-badge></td>
                   <td class="px-4 py-3">
                     <div class="flex flex-wrap gap-2">
@@ -109,14 +108,6 @@ export class EmployeeListPage {
     if (status === 'ACTIVE') return 'success';
     if (status === 'INACTIVE') return 'warning';
     return 'danger';
-  }
-
-  protected branchLabel(employee: EmployeeRecord): string {
-    const active = employee.branches.filter((branch) => branch.status === 'ACTIVE');
-    if (active.length === 0) return '—';
-    const primary = active.find((branch) => branch.isPrimary);
-    const extra = active.length - 1;
-    return extra > 0 ? `${primary?.branchName ?? active[0]?.branchName} +${extra}` : (primary?.branchName ?? active[0]?.branchName ?? '—');
   }
 
   protected search(): void {

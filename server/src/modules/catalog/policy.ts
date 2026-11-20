@@ -19,7 +19,7 @@ export function policyFrom(settings: unknown): CatalogPolicy {
   const max = catalog['maxCommissionPercent'];
   const unique = catalog['uniquePhone'];
   return {
-    maxCommissionPercent: typeof max === 'number' && Number.isFinite(max) && max >= 0 && max <= 100 ? max : 100,
+    maxCommissionPercent: typeof max === 'number' && Number.isFinite(max) && max >= 0 ? max : 100,
     uniquePhone: typeof unique === 'boolean' ? unique : true,
   };
 }

@@ -38,7 +38,7 @@ import { localizedLabel, type ServiceCategory } from '../catalog/catalog.models'
             <enzo-select formControlName="categoryId" [label]="'services.category' | t" [options]="categoryOptions()" />
             <enzo-text-input formControlName="price" type="number" [label]="'services.price' | t" [required]="true" />
             <enzo-select formControlName="commissionType" [label]="'services.commission' | t" [options]="commissionOptions()" />
-            <enzo-text-input formControlName="commissionValue" type="number" [label]="'services.commissionValue' | t" [hint]="capHint()" />
+            <enzo-text-input formControlName="commissionValue" type="number" [label]="'services.commissionValue' | t" />
             <div class="md:col-span-2">
               <label class="grid gap-2 text-sm">
                 <span class="text-text-secondary">{{ 'services.image' | t }}</span>
@@ -70,7 +70,6 @@ export class ServiceFormPage {
   readonly error = signal('');
   readonly loadError = signal('');
   readonly categories = signal<ServiceCategory[]>([]);
-  readonly cap = signal(100);
   readonly breadcrumbs = () => [
     { labelKey: 'nav.dashboard', link: '/dashboard' },
     { labelKey: 'nav.services', link: '/services' },
@@ -92,10 +91,6 @@ export class ServiceFormPage {
     this.api.categories().subscribe({
       next: (result) => this.categories.set(result.data.filter((item) => item.status === 'ACTIVE')),
       error: () => this.categories.set([]),
-    });
-    this.api.serviceSettings().subscribe({
-      next: (result) => this.cap.set(result.data.maxCommissionPercent),
-      error: () => this.cap.set(100),
     });
     if (!this.serviceId) {
       this.loading.set(false);
@@ -135,10 +130,6 @@ export class ServiceFormPage {
       { value: 'PERCENTAGE', label: this.i18n.translate('workforce.percentage') },
       { value: 'FIXED', label: this.i18n.translate('workforce.fixed') },
     ];
-  }
-
-  protected capHint(): string {
-    return this.form.controls.commissionType.value === 'PERCENTAGE' ? `${this.i18n.translate('services.cap')}: ${this.cap()}` : '';
   }
 
   protected onImage(event: Event): void {

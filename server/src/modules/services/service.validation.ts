@@ -66,7 +66,7 @@ export const serviceStatusSchema = z.object({
 });
 
 export const serviceSettingsSchema = z.object({
-  body: z.object({ maxCommissionPercent: z.number().min(0).max(100) }),
+  body: z.object({ maxCommissionPercent: z.number().min(0) }),
   query: z.object({}).passthrough(),
   params: z.object({}).passthrough(),
 });

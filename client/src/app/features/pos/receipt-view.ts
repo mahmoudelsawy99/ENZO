@@ -25,7 +25,12 @@ import type { SaleRecord } from './finance.models';
           <ul class="mt-2 grid gap-2">
             @for (item of receipt.items; track $index) {
               <li class="flex justify-between gap-3">
-                <span>{{ label(item.serviceName) }} × {{ text(item.quantity) }}</span>
+                <span>
+                  {{ label(item.serviceName) }} × {{ text(item.quantity) }}
+                  @if (item.barberName) {
+                    <span class="block text-xs text-text-secondary">{{ 'finance.barber' | t }}: {{ item.barberName }}</span>
+                  }
+                </span>
                 <span>{{ money(item.lineTotal) }}</span>
               </li>
             }

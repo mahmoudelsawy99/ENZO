@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import type { QueueEntryRecord } from '../appointments/appointment.models';
 import { SHOP_BARBERS } from '../appointments/shop-barbers';
-import { SHOP_SERVICES, mergeServices } from '../appointments/shop-services';
+import { activeServices, mergeServices } from '../appointments/shop-services';
 import type { ServiceRecord } from '../catalog/catalog.models';
 import type { SaleRecord, ShiftRecord } from './finance.models';
 
@@ -15,7 +15,7 @@ export interface LocalOrderInput {
   barberEmployeeId: string;
   extraBarberIds?: string[];
   customer: { fullName: string; phone: string };
-  services: Array<{ serviceId: string; quantity: number }>;
+  services: Array<{ serviceId: string; quantity: number; barberEmployeeId?: string }>;
   idempotencyKey: string;
   additionalDiscount: number;
   payments: Array<{ method: string; amount: number; referenceNumber: string }>;
@@ -36,13 +36,13 @@ export interface LocalWalkInInput {
 export class CashierLocalStore {
   services(): ServiceRecord[] {
     const cached = readJson<ServiceRecord[]>(SERVICES_KEY, []);
-    return mergeServices(cached.length > 0 ? cached : []);
+    return activeServices(cached.length > 0 ? cached : []);
   }
 
   rememberServices(remote: ServiceRecord[]): ServiceRecord[] {
     const merged = mergeServices(remote);
     writeJson(SERVICES_KEY, merged);
-    return merged;
+    return activeServices(merged);
   }
 
   orders(): SaleRecord[] {
@@ -57,6 +57,8 @@ export class CashierLocalStore {
       const service = catalog.find((item) => item.id === line.serviceId);
       const unitPrice = service?.price ?? 0;
       const quantity = line.quantity || 1;
+      const barberEmployeeId = line.barberEmployeeId || input.barberEmployeeId;
+      const barber = SHOP_BARBERS.find((item) => item.id === barberEmployeeId);
       return {
         itemType: 'SERVICE',
         serviceId: line.serviceId,
@@ -67,12 +69,30 @@ export class CashierLocalStore {
         unitPrice,
         discount: 0,
         lineTotal: Math.round(unitPrice * quantity * 100) / 100,
+        barberEmployeeId,
+        barberName: barber?.fullName ?? '',
       };
     });
     const subtotal = Math.round(items.reduce((sum, item) => sum + item.lineTotal, 0) * 100) / 100;
     const manualDiscount = Math.round((input.additionalDiscount || 0) * 100) / 100;
     const totalAmount = Math.max(0, Math.round((subtotal - manualDiscount) * 100) / 100);
     const paidAmount = Math.round(input.payments.reduce((sum, payment) => sum + payment.amount, 0) * 100) / 100;
+    const commissions = items.map((item) => {
+      const service = catalog.find((row) => row.id === item.serviceId);
+      const kind = service?.commissionType || 'PERCENTAGE';
+      const rate = service?.commissionValue ?? 0;
+      const commissionAmount = kind === 'FIXED'
+        ? Math.round(rate * item.quantity * 100) / 100
+        : Math.round(((item.lineTotal * rate) / 100) * 100) / 100;
+      return {
+        employeeId: item.barberEmployeeId,
+        serviceId: item.serviceId ?? '',
+        commissionType: kind,
+        commissionRate: rate,
+        commissionAmount,
+        source: 'SERVICE',
+      };
+    });
     const sale: SaleRecord = {
       id,
       transactionNumber: `LOCAL-${stamp()}`,
@@ -105,7 +125,7 @@ export class CashierLocalStore {
       })),
       refunds: [],
       tips: [],
-      commissions: [],
+      commissions,
     };
     const next = [sale, ...this.orders()];
     writeJson(ORDERS_KEY, next);

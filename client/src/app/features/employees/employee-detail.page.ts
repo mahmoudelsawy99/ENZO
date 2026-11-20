@@ -33,7 +33,9 @@ import type { ActivityEntry, BranchRecord, EmployeeRecord } from '../organizatio
       </enzo-page-header>
       <div class="mb-4 flex flex-wrap gap-2" role="tablist">
         @for (tab of tabs; track tab) {
-          <button enzoButton type="button" [variant]="active() === tab ? 'primary' : 'secondary'" (click)="active.set(tab)">{{ 'employees.' + tab | t }}</button>
+          @if (tab !== 'branches') {
+            <button enzoButton type="button" [variant]="active() === tab ? 'primary' : 'secondary'" (click)="active.set(tab)">{{ 'employees.' + tab | t }}</button>
+          }
         }
       </div>
       @if (active() === 'personal') {
