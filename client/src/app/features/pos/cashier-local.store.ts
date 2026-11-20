@@ -65,12 +65,12 @@ export class CashierLocalStore {
         productId: null,
         sku: '',
         serviceName: service?.name ?? { en: line.serviceId, ar: line.serviceId },
+        barberEmployeeId,
+        barberName: barber?.fullName ?? '',
         quantity,
         unitPrice,
         discount: 0,
         lineTotal: Math.round(unitPrice * quantity * 100) / 100,
-        barberEmployeeId,
-        barberName: barber?.fullName ?? '',
       };
     });
     const subtotal = Math.round(items.reduce((sum, item) => sum + item.lineTotal, 0) * 100) / 100;

@@ -1,4 +1,4 @@
-import { Component, input, output } from '@angular/core';
+import { booleanAttribute, Component, input, output } from '@angular/core';
 import { FormArray, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { Button } from '../../shared/ui/button';
@@ -16,7 +16,7 @@ import { TextInput } from '../../shared/ui/text-input';
       </div>
       <div formArrayName="payments" class="grid gap-3">
         @for (row of rows(); track $index) {
-          <div class="grid gap-3 rounded-lg border border-border p-3 md:grid-cols-4" [formGroupName]="$index">
+          <div class="grid gap-3 rounded-lg border border-border p-3" [class.md:grid-cols-4]="!compact()" [formGroupName]="$index">
             <enzo-select formControlName="method" [label]="'finance.method' | t" [options]="methods()" />
             <enzo-text-input formControlName="amount" type="number" [label]="'finance.amount' | t" />
             <enzo-text-input formControlName="referenceNumber" [label]="'finance.reference' | t" />
@@ -34,6 +34,7 @@ import { TextInput } from '../../shared/ui/text-input';
 export class PaymentAllocation {
   readonly form = input.required<FormGroup>();
   readonly methods = input.required<SelectOption[]>();
+  readonly compact = input(false, { transform: booleanAttribute });
   readonly addPayment = output<void>();
   readonly removePayment = output<number>();
 

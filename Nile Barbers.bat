@@ -1,7 +1,7 @@
 @echo off
 title Nile Barbers
 
-cd /g "G:\work space\Akram"
+cd /d "D:\work space\Akram"
 
 if not exist "client\dist\client\browser\index.html" (
     echo Nile Barbers is not built yet.
