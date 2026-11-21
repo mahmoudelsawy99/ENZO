@@ -151,7 +151,8 @@ html[lang='ar'] .font-display {
   animation: enzo-spin 0.7s linear infinite;
 }
 
-.enzo-sidebar-nav {
+.enzo-sidebar-nav,
+.enzo-scroll {
   scrollbar-width: thin;
 }
 

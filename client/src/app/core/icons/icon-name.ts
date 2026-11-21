@@ -14,6 +14,7 @@ export const ICON_NAMES = [
   'boxes',
   'truck',
   'cart',
+  'basket',
   'building',
   'chart',
   'shield',

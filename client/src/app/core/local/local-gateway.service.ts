@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { GoogleSyncService } from '../google/google-sync.service';
 import { nileDb, openNileDatabase } from './local-database';
 import { LocalBackupService } from './local-backup.service';
 import { dispatchLocal } from './local-route';
@@ -9,6 +10,7 @@ import { isLocalFirst } from './local-mode';
 @Injectable({ providedIn: 'root' })
 export class LocalGateway {
   private readonly backup = inject(LocalBackupService);
+  private readonly googleSync = inject(GoogleSyncService);
   private ready: Promise<void> | null = null;
 
   prepare(): Promise<void> {
@@ -24,9 +26,45 @@ export class LocalGateway {
       const result = await dispatchLocal({ db: nileDb, method, path, body, userId: localUserId() });
       if (method.toUpperCase() !== 'GET' && method.toUpperCase() !== 'HEAD') {
         markLocalWrite();
+        this.queueServicesSync(path, result);
+        this.queueUsersSync(path, result);
       }
       return result;
     });
+  }
+
+  private queueServicesSync(path: string, result: unknown): void {
+    const clean = path.split('?')[0] ?? path;
+    if (!clean.includes('/v1/services')) {
+      return;
+    }
+    if (clean.includes('/v1/services/settings') || clean.includes('/v1/services/image')) {
+      return;
+    }
+    this.googleSync.noteLocalServicesWrite(this.idsFromWrite(clean, 'services', result, ['settings', 'image']));
+  }
+
+  private queueUsersSync(path: string, result: unknown): void {
+    const clean = path.split('?')[0] ?? path;
+    if (!clean.includes('/v1/users')) {
+      return;
+    }
+    this.googleSync.noteLocalUsersWrite(this.idsFromWrite(clean, 'users', result, []));
+  }
+
+  private idsFromWrite(clean: string, collection: string, result: unknown, skip: string[]): string[] {
+    const ids: string[] = [];
+    const payload = result && typeof result === 'object' ? (result as { data?: { id?: string } }) : null;
+    if (payload?.data?.id) {
+      ids.push(payload.data.id);
+    }
+    const parts = clean.split('/').filter(Boolean);
+    const index = parts.indexOf(collection);
+    const maybeId = index >= 0 ? parts[index + 1] : '';
+    if (maybeId && !skip.includes(maybeId)) {
+      ids.push(maybeId);
+    }
+    return ids;
   }
 
   private async boot(): Promise<void> {

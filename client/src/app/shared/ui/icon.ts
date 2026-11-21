@@ -134,6 +134,13 @@ const ICONS: Record<IconName, readonly Segment[]> = {
     { kind: 'circle', cx: '19', cy: '21', r: '1' },
     { kind: 'path', d: 'M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12' },
   ],
+  basket: [
+    { kind: 'path', d: 'M3 6h18' },
+    { kind: 'path', d: 'M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2' },
+    { kind: 'path', d: 'M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6' },
+    { kind: 'path', d: 'M10 11v6' },
+    { kind: 'path', d: 'M14 11v6' },
+  ],
   building: [
     { kind: 'rect', x: '4', y: '2', width: '16', height: '20', rx: '2' },
     { kind: 'path', d: 'M9 22v-4h6v4' },

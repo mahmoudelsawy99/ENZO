@@ -4,6 +4,7 @@ import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { AuthService } from '../../core/auth/auth.service';
 import { LanguageService } from '../../core/i18n/language.service';
 import { ThemeService } from '../../core/theme/theme.service';
+import { Breadcrumbs } from '../../shared/ui/breadcrumbs';
 import { Button } from '../../shared/ui/button';
 import { Icon } from '../../shared/ui/icon';
 import { Menu, type MenuEntry } from '../../shared/ui/menu';
@@ -11,23 +12,36 @@ import { ShellState } from '../shell-state.service';
 
 @Component({
   selector: 'app-topbar',
-  imports: [TranslatePipe, Button, Icon, Menu],
+  imports: [TranslatePipe, Button, Icon, Menu, Breadcrumbs],
   template: `
-    <header class="sticky top-0 z-30 flex min-h-16 flex-wrap items-center gap-2 border-b border-border bg-background px-3 py-2 md:px-4">
-      <div class="lg:hidden">
-        <button
-          enzoButton
-          variant="ghost"
-          iconOnly
-          type="button"
-          [attr.aria-label]="'shell.openMenu' | t"
-          (click)="shell.toggleMobile()"
-        >
-          <enzo-icon name="menu" />
-        </button>
+    <header class="sticky top-0 z-30 grid min-h-16 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 border-b border-border bg-background px-3 py-2 md:px-4">
+      <div class="flex min-w-0 items-center gap-3">
+        <div class="lg:hidden">
+          <button
+            enzoButton
+            variant="ghost"
+            iconOnly
+            type="button"
+            [attr.aria-label]="'shell.openMenu' | t"
+            (click)="shell.toggleMobile()"
+          >
+            <enzo-icon name="menu" />
+          </button>
+        </div>
+        @if (shell.crumbs().length) {
+          <div class="min-w-0 overflow-hidden">
+            <enzo-breadcrumbs [items]="shell.crumbs()" />
+          </div>
+        }
       </div>
 
-      <div class="ms-auto flex flex-wrap items-center gap-1 sm:gap-2">
+      @if (shell.titleKey()) {
+        <h1 class="truncate px-2 text-center text-lg font-semibold text-text-primary">{{ shell.titleKey() | t }}</h1>
+      } @else {
+        <span></span>
+      }
+
+      <div class="flex flex-wrap items-center justify-end gap-1 sm:gap-2">
         <!-- Branch dropdown hidden -->
 
         <div

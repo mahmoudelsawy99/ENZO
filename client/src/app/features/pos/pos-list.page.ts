@@ -16,23 +16,17 @@ import { Pagination } from '../../shared/ui/pagination';
 import { SearchInput } from '../../shared/ui/search-input';
 import { Select, type SelectOption } from '../../shared/ui/select';
 import { FinanceApi } from './finance.api';
-import { ReceiptView } from './receipt-view';
 import type { ReadyAppointment } from './finance.models';
 
 @Component({
   selector: 'app-pos-list-page',
-  imports: [ReactiveFormsModule, RouterLink, TranslatePipe, PageHeader, Button, SearchInput, Select, Badge, LoadingState, ErrorState, EmptyState, Pagination, ReceiptView],
+  imports: [ReactiveFormsModule, RouterLink, TranslatePipe, PageHeader, Button, SearchInput, Select, Badge, LoadingState, ErrorState, EmptyState, Pagination],
   template: `
     <enzo-page-header [title]="'finance.readyTitle' | t" [description]="'finance.readyDescription' | t" [breadcrumbs]="breadcrumbs">
       @if (access.can('pos.checkout')) {
         <a enzoButton routerLink="/pos/new">{{ 'finance.newOrder' | t }}</a>
       }
     </enzo-page-header>
-    <section class="mb-4 w-[80mm] max-w-[80mm]">
-      <h2 class="text-sm font-medium">{{ 'finance.testInvoice' | t }}</h2>
-      <p class="mt-1 text-sm text-text-secondary">{{ 'finance.testInvoiceHint' | t }}</p>
-      <app-receipt-view [test]="true" />
-    </section>
     <form class="mb-4 grid gap-3 md:grid-cols-3" [formGroup]="filters" (ngSubmit)="search()">
       <enzo-search-input formControlName="search" [label]="'common.search' | t" />
       <enzo-select formControlName="branchId" [label]="'appointments.branch' | t" [options]="branchOptions()" />

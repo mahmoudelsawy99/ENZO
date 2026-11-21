@@ -1,4 +1,4 @@
-import { Component, effect, inject, signal } from '@angular/core';
+import { Component, DestroyRef, effect, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -7,10 +7,10 @@ import { ApiError } from '../../core/api/api-error';
 import { LanguageService } from '../../core/i18n/language.service';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { BranchContext } from '../../core/session/branch-context.service';
+import { ShellState } from '../../layout/shell-state.service';
 import { Button } from '../../shared/ui/button';
 import { ErrorState } from '../../shared/ui/error-state';
 import { LoadingState } from '../../shared/ui/loading-state';
-import { PageHeader } from '../../shared/ui/page-header';
 import { Select, type SelectOption } from '../../shared/ui/select';
 import { TextInput } from '../../shared/ui/text-input';
 import { ToastService } from '../../shared/ui/toast.service';
@@ -32,11 +32,8 @@ const METHODS = ['CASH', 'VISA', 'WALLET', 'INSTAPAY', 'OTHER'];
 
 @Component({
   selector: 'app-pos-order-page',
-  imports: [ReactiveFormsModule, RouterLink, TranslatePipe, PageHeader, Button, TextInput, Select, LoadingState, ErrorState, PaymentAllocation, ReceiptView],
+  imports: [ReactiveFormsModule, RouterLink, TranslatePipe, Button, TextInput, Select, LoadingState, ErrorState, PaymentAllocation, ReceiptView],
   template: `
-    <enzo-page-header [title]="'finance.newOrder' | t" [description]="'finance.newOrderDescription' | t" [breadcrumbs]="breadcrumbs">
-      <a enzoButton variant="secondary" routerLink="/pos">{{ 'finance.readyTitle' | t }}</a>
-    </enzo-page-header>
     @if (loading()) {
       <enzo-loading-state [message]="'common.loading' | t" />
     } @else if (loadError()) {
@@ -57,9 +54,9 @@ const METHODS = ['CASH', 'VISA', 'WALLET', 'INSTAPAY', 'OTHER'];
             <a class="ms-2 text-brand-gold underline" routerLink="/shifts">{{ 'finance.openShift' | t }}</a>
           </p>
         }
-        <div class="grid items-stretch gap-4 lg:grid-cols-[26rem_minmax(0,1fr)]" dir="ltr">
-          <section class="flex min-h-[32rem] flex-col overflow-hidden rounded-xl border border-border bg-surface lg:order-2 lg:h-[calc(100vh-9rem)]" [attr.dir]="direction()">
-            <div class="border-b border-border px-4 py-3">
+        <div class="grid items-stretch gap-4 lg:grid-cols-[28rem_minmax(0,1fr)]" dir="ltr">
+          <section class="flex min-h-[28rem] min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-surface lg:order-2 lg:h-[calc(100dvh-8.5rem)]" [attr.dir]="direction()">
+            <div class="shrink-0 border-b border-border px-4 py-3">
               <div class="flex items-center justify-between gap-3">
                 <h2 class="text-base font-semibold">{{ 'finance.services' | t }}</h2>
                 <span class="text-xs text-text-secondary">{{ 'finance.tapService' | t }}</span>
@@ -72,7 +69,7 @@ const METHODS = ['CASH', 'VISA', 'WALLET', 'INSTAPAY', 'OTHER'];
               </div>
               <input class="enzo-control mt-3" type="search" [attr.placeholder]="'common.search' | t" [attr.aria-label]="'common.search' | t" [value]="menuQuery()" (input)="menuQuery.set(valueOf($event))" />
             </div>
-            <div class="grid flex-1 content-start grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-2 overflow-auto p-3">
+            <div class="enzo-scroll grid min-h-0 flex-1 content-start grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-2 overflow-y-auto p-3">
               @for (service of visibleServices(); track service.id) {
                 <button type="button" class="relative flex min-h-[5.25rem] flex-col justify-between rounded-lg border px-3 py-2.5 text-start transition-colors" [class.border-brand-red]="quantityOf(service.id) > 0" [class.bg-surface-elevated]="quantityOf(service.id) > 0" [class.border-border]="quantityOf(service.id) === 0" [class.bg-surface]="quantityOf(service.id) === 0" (click)="pickService(service)">
                   <span class="line-clamp-2 pe-6 text-sm font-medium leading-snug">{{ serviceName(service) }}</span>
@@ -84,20 +81,20 @@ const METHODS = ['CASH', 'VISA', 'WALLET', 'INSTAPAY', 'OTHER'];
               }
             </div>
           </section>
-          <section class="flex min-h-[32rem] flex-col overflow-hidden rounded-xl border border-border bg-surface lg:order-1 lg:h-[calc(100vh-9rem)]" [attr.dir]="direction()">
-            <header class="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+          <section class="flex min-h-[28rem] min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-surface lg:order-1 lg:h-[calc(100dvh-8.5rem)]" [attr.dir]="direction()">
+            <header class="flex shrink-0 items-center justify-between gap-3 border-b border-border px-4 py-3">
               <h2 class="text-base font-semibold">{{ 'finance.currentOrder' | t }}</h2>
               <span class="rounded-full bg-surface-elevated px-2.5 py-1 text-xs text-text-secondary">{{ text(orderLines().length) }}</span>
             </header>
-            <div class="grid gap-3 border-b border-border px-4 py-3">
+            <div class="grid shrink-0 gap-2 border-b border-border px-3 py-2">
               @if (!singleBranch()) {
                 <enzo-select formControlName="branchId" [label]="'appointments.branch' | t" [options]="branchOptions()" />
               }
-              <div class="grid gap-3">
-                <div class="relative">
+              <div class="grid grid-cols-2 gap-2">
+                <div class="relative min-w-0">
                   <enzo-text-input formControlName="fullName" [label]="'appointments.customerSearch' | t" />
                   @if (customerMatches().length > 0) {
-                    <ul class="absolute z-20 mt-1 max-h-56 w-full overflow-auto rounded-md border border-border bg-surface shadow-md" role="listbox">
+                    <ul class="enzo-scroll absolute z-20 mt-1 max-h-56 w-full overflow-auto rounded-md border border-border bg-surface shadow-md" role="listbox">
                       @for (customer of customerMatches(); track customer.id) {
                         <li>
                           <button type="button" class="flex w-full flex-col gap-0.5 px-3 py-2 text-start text-sm hover:bg-surface-elevated" (click)="pickCustomer(customer)">
@@ -109,47 +106,46 @@ const METHODS = ['CASH', 'VISA', 'WALLET', 'INSTAPAY', 'OTHER'];
                     </ul>
                   }
                 </div>
-                <enzo-text-input formControlName="phone" type="tel" [label]="'customers.phone' | t" />
+                <div class="min-w-0">
+                  <enzo-text-input formControlName="phone" type="tel" [label]="'customers.phone' | t" />
+                </div>
               </div>
             </div>
-            <div class="grid flex-1 content-start gap-2 overflow-auto p-3" formArrayName="services">
+            <div #linesPane class="enzo-scroll grid min-h-0 flex-1 content-start gap-2 overflow-y-auto overscroll-contain p-3" formArrayName="services">
               @if (orderLines().length === 0) {
                 <p class="px-2 py-8 text-center text-sm text-text-secondary">{{ 'finance.emptyOrder' | t }}</p>
               }
               @for (line of orderLines(); track line.serviceId) {
-                <div class="rounded-lg border border-border bg-surface-elevated p-3" [formGroupName]="line.index">
+                <div class="rounded-lg border border-border bg-surface-elevated px-3 py-2" [formGroupName]="line.index">
                   <div class="flex items-start justify-between gap-3">
-                    <span class="text-sm font-medium">{{ line.name }}</span>
-                    <span class="text-sm font-semibold text-brand-gold">{{ money(line.total) }}</span>
+                    <span class="text-sm font-medium leading-snug">{{ line.name }}</span>
+                    <span class="shrink-0 text-sm font-semibold text-brand-gold">{{ money(line.total) }}</span>
                   </div>
-                  <div class="mt-2 flex items-center gap-2">
+                  <div class="mt-1.5 flex items-center gap-2">
                     <select class="enzo-control h-9 min-w-0 flex-1 text-sm" formControlName="barberEmployeeId" [attr.aria-label]="'finance.barber' | t">
                       @for (barber of barbers(); track barber.id) {
                         <option [value]="barber.id">{{ barber.fullName }}</option>
                       }
                     </select>
                     <div class="flex shrink-0 items-center rounded-md border border-border bg-surface">
-                      <button type="button" class="size-9 text-lg leading-none" [attr.aria-label]="'finance.less' | t" (click)="changeQty(line.index, -1)">−</button>
+                      <button type="button" class="size-8 text-lg leading-none" [attr.aria-label]="'finance.less' | t" (click)="changeQty(line.index, -1)">−</button>
                       <span class="w-6 text-center text-sm font-medium">{{ text(line.quantity) }}</span>
-                      <button type="button" class="size-9 text-lg leading-none" [attr.aria-label]="'finance.more' | t" (click)="changeQty(line.index, 1)">+</button>
+                      <button type="button" class="size-8 text-lg leading-none" [attr.aria-label]="'finance.more' | t" (click)="changeQty(line.index, 1)">+</button>
                     </div>
                   </div>
                 </div>
               }
             </div>
-            <footer class="grid gap-3 border-t border-border bg-surface-elevated p-4">
-              @if (access.can('pos.apply-discount') || access.can('payments.apply-discount')) {
-                <enzo-text-input formControlName="additionalDiscount" type="number" [label]="'finance.additionalDiscount' | t" />
-              }
-              <enzo-text-input formControlName="cashText" type="number" [label]="'finance.cashAmount' | t" />
+            <footer class="grid shrink-0 gap-2 border-t border-border bg-surface-elevated px-3 py-3">
               <div class="flex items-end justify-between gap-3">
                 <span class="text-sm text-text-secondary">{{ 'finance.total' | t }}</span>
                 <span class="text-3xl font-semibold leading-none">{{ money(amountDue()) }}</span>
               </div>
-              <app-payment-allocation [form]="form" [methods]="methodOptions()" [compact]="true" (addPayment)="addPayment()" (removePayment)="removePayment($event)" />
-              <div class="grid">
-                <button enzoButton type="submit" [loading]="saving()">{{ 'finance.takePayment' | t }}</button>
+              <enzo-text-input formControlName="cashText" type="number" [label]="'finance.cashAmount' | t" />
+              <div class="enzo-scroll max-h-36 overflow-y-auto overscroll-contain">
+                <app-payment-allocation [form]="form" [methods]="methodOptions()" [compact]="true" (addPayment)="addPayment()" (removePayment)="removePayment($event)" />
               </div>
+              <button enzoButton type="submit" [loading]="saving()">{{ 'finance.takePayment' | t }}</button>
             </footer>
           </section>
         </div>
@@ -166,7 +162,9 @@ export class PosOrderPage {
   private readonly formBuilder = inject(FormBuilder);
   private readonly toast = inject(ToastService);
   private readonly branches = inject(BranchContext);
+  private readonly shell = inject(ShellState);
   protected readonly access = inject(TenantAccess);
+  private readonly linesPane = viewChild<ElementRef<HTMLElement>>('linesPane');
 
   readonly breadcrumbs = [
     { labelKey: 'nav.dashboard', link: '/dashboard' },
@@ -185,8 +183,6 @@ export class PosOrderPage {
   readonly customerMatches = signal<CustomerRecord[]>([]);
   readonly shiftOpen = signal(true);
   private readonly revision = signal(0);
-  private binding = false;
-  private cashTouched = false;
   private bootstrapped = false;
   private pickingCustomer = false;
   private customerSearchTimer: number | null = null;
@@ -197,7 +193,6 @@ export class PosOrderPage {
     barberEmployeeId: [''],
     fullName: [''],
     phone: [''],
-    additionalDiscount: ['0'],
     totalText: ['0'],
     cashText: ['0'],
     services: this.formBuilder.array<ReturnType<PosOrderPage['serviceGroup']>>([]),
@@ -205,20 +200,15 @@ export class PosOrderPage {
   });
 
   constructor() {
+    this.shell.setNav('finance.newOrder', this.breadcrumbs);
+    inject(DestroyRef).onDestroy(() => this.shell.clearNav());
     this.form.controls.services.valueChanges.subscribe(() => {
       this.revision.update((value) => value + 1);
       this.bindAmounts();
     });
     this.form.controls.totalText.disable({ emitEvent: false });
-    this.form.controls.additionalDiscount.valueChanges.subscribe(() => {
-      this.revision.update((value) => value + 1);
-      this.bindAmounts();
-    });
-    this.form.controls.cashText.valueChanges.subscribe(() => {
-      if (!this.binding) {
-        this.cashTouched = true;
-      }
-    });
+    this.form.controls.cashText.disable({ emitEvent: false });
+    this.form.controls.payments.valueChanges.subscribe(() => this.bindAmounts());
     this.form.controls.fullName.valueChanges.subscribe((value) => {
       if (!this.pickingCustomer) {
         this.scheduleCustomerSearch(value);
@@ -333,9 +323,17 @@ export class PosOrderPage {
     const existing = rows.controls.find((group) => group.controls.serviceId.value === service.id);
     if (existing) {
       existing.controls.quantity.setValue((Number(existing.controls.quantity.value) || 1) + 1);
-      return;
+    } else {
+      rows.push(this.serviceGroup(service.id, this.defaultBarberId()));
     }
-    rows.push(this.serviceGroup(service.id, this.defaultBarberId()));
+    this.scrollOrderLines();
+  }
+
+  private scrollOrderLines(): void {
+    queueMicrotask(() => {
+      const pane = this.linesPane()?.nativeElement;
+      pane?.scrollTo({ top: pane.scrollHeight, behavior: 'smooth' });
+    });
   }
 
   protected singleBranch(): boolean {
@@ -365,7 +363,7 @@ export class PosOrderPage {
   }
 
   protected methodOptions(): SelectOption[] {
-    return METHODS.map((method) => ({ value: method, label: this.i18n.translate(`finance.methods.${method}`) }));
+    return METHODS.filter((method) => method !== 'CASH').map((method) => ({ value: method, label: this.i18n.translate(`finance.methods.${method}`) }));
   }
 
   protected money(value: number): string {
@@ -378,13 +376,12 @@ export class PosOrderPage {
 
   protected amountDue(): number {
     this.revision();
-    const discount = Number(this.form.controls.additionalDiscount.value) || 0;
     const subtotal = this.form.controls.services.getRawValue().reduce((sum, row) => {
       const service = this.services().find((item) => item.id === row.serviceId);
       const quantity = Number(row.quantity) || 0;
       return sum + (service ? service.price * quantity : 0);
     }, 0);
-    return Math.max(0, Math.round((subtotal - discount) * 100) / 100);
+    return Math.max(0, Math.round(subtotal * 100) / 100);
   }
 
   protected cashWithoutShift(): boolean {
@@ -411,9 +408,8 @@ export class PosOrderPage {
       return;
     }
     const total = this.amountDue();
-    const cash = Math.round((Number(value.cashText) || 0) * 100) / 100;
-    const canDiscount = this.access.can('pos.apply-discount') || this.access.can('payments.apply-discount');
-    const discount = canDiscount ? Number(value.additionalDiscount) || 0 : 0;
+    const cash = Math.max(0, Math.round((Number(value.cashText) || 0) * 100) / 100);
+    const discount = 0;
     const otherPayments = value.payments
       .map((payment) => ({ method: payment.method, amount: Number(payment.amount), referenceNumber: payment.referenceNumber.trim() }))
       .filter((payment) => payment.method !== 'CASH' && payment.amount > 0);
@@ -500,13 +496,14 @@ export class PosOrderPage {
   }
 
   private bindAmounts(): void {
-    const text = String(this.amountDue());
-    this.binding = true;
-    this.form.controls.totalText.setValue(text, { emitEvent: false });
-    if (!this.cashTouched) {
-      this.form.controls.cashText.setValue(text, { emitEvent: false });
-    }
-    this.binding = false;
+    const due = this.amountDue();
+    const other = this.form.controls.payments.getRawValue().reduce((sum, payment) => {
+      const amount = Number(payment.amount);
+      return sum + (Number.isFinite(amount) && amount > 0 ? amount : 0);
+    }, 0);
+    const cash = Math.max(0, Math.round((due - other) * 100) / 100);
+    this.form.controls.totalText.setValue(String(due), { emitEvent: false });
+    this.form.controls.cashText.setValue(String(cash), { emitEvent: false });
   }
 
   private loadBarbers(branchId: string): void {

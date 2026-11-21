@@ -7,36 +7,6 @@ import { Button } from '../../shared/ui/button';
 import { Card } from '../../shared/ui/card';
 import type { SaleRecord } from './finance.models';
 
-const TEST_SALE: SaleRecord = {
-  id: 'test-80',
-  transactionNumber: 'TEST-80',
-  branchId: '',
-  appointmentId: '',
-  customerId: '',
-  customerName: 'عميل تجريبي',
-  customerPhone: '01000000000',
-  cashierName: 'Hanan',
-  items: [
-    { itemType: 'SERVICE', serviceId: 'test-cut', serviceName: { ar: 'قص', en: 'قص' }, quantity: 1, unitPrice: 320, discount: 0, lineTotal: 320 },
-    { itemType: 'SERVICE', serviceId: 'test-beard', serviceName: { ar: 'ذقن', en: 'ذقن' }, quantity: 1, unitPrice: 170, discount: 0, lineTotal: 170 },
-  ],
-  subtotal: 490,
-  packageDiscount: 0,
-  manualDiscount: 0,
-  totalDiscount: 0,
-  totalAmount: 490,
-  paidAmount: 490,
-  refundedAmount: 0,
-  amountDue: 0,
-  status: 'PAID',
-  tipTotal: 0,
-  createdAt: new Date().toISOString(),
-  payments: [{ id: 'test-pay', method: 'CASH', amount: 490, refundedAmount: 0, referenceNumber: '', status: 'CAPTURED', receivedAt: new Date().toISOString() }],
-  refunds: [],
-  tips: [],
-  commissions: [],
-};
-
 @Component({
   selector: 'app-receipt-view',
   imports: [TranslatePipe, Badge, Button, Card],
@@ -126,8 +96,7 @@ const TEST_SALE: SaleRecord = {
 export class ReceiptView {
   private readonly i18n = inject(LanguageService);
   readonly sale = input<SaleRecord | null>(null);
-  readonly test = input(false);
-  protected readonly receipt = computed(() => this.sale() ?? (this.test() ? { ...TEST_SALE, createdAt: new Date().toISOString() } : null));
+  protected readonly receipt = computed(() => this.sale());
 
   protected label(value: { en: string; ar: string }): string {
     return localizedLabel(value, this.i18n.language());
