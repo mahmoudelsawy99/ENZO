@@ -536,6 +536,16 @@
       "status": "ACTIVE",
       "createdAt": "2026-11-07T23:40:52.592Z",
       "updatedAt": "2026-11-12T15:24:01.876Z"
+    },
+    {
+      "id": "cat-ziadat",
+      "name": {
+        "en": "Sales",
+        "ar": "مبيعات"
+      },
+      "status": "ACTIVE",
+      "createdAt": "2026-11-21T19:00:00.000Z",
+      "updatedAt": "2026-11-21T19:40:00.000Z"
     }
   ],
   "services": [
@@ -972,9 +982,9 @@
       "price": 120,
       "commissionType": "PERCENTAGE",
       "commissionValue": 0,
-      "status": "ACTIVE",
+      "status": "INACTIVE",
       "createdAt": "2026-11-07T23:40:54.502Z",
-      "updatedAt": "2026-11-12T15:24:02.762Z"
+      "updatedAt": "2026-11-21T19:00:00.000Z"
     },
     {
       "id": "6aefb705d5345916d38f5c04",
@@ -1389,6 +1399,222 @@
       "status": "ACTIVE",
       "createdAt": "2026-11-07T23:40:55.360Z",
       "updatedAt": "2026-11-12T15:24:02.782Z"
+    },
+    {
+      "id": "svc-ziadat-onix-serum",
+      "name": {
+        "en": "Onix serum",
+        "ar": "سيرم Onix"
+      },
+      "description": {
+        "en": "",
+        "ar": ""
+      },
+      "categoryId": "cat-ziadat",
+      "categoryName": {
+        "en": "Sales",
+        "ar": "مبيعات"
+      },
+      "image": "",
+      "price": 500,
+      "costPrice": 250,
+      "commissionType": "FIXED",
+      "commissionValue": 30,
+      "status": "ACTIVE",
+      "createdAt": "2026-11-21T19:00:00.000Z",
+      "updatedAt": "2026-11-21T19:40:00.000Z"
+    },
+    {
+      "id": "svc-ziadat-onix-oil",
+      "name": {
+        "en": "Onix oil bath",
+        "ar": "حمام زيت Onix"
+      },
+      "description": {
+        "en": "",
+        "ar": ""
+      },
+      "categoryId": "cat-ziadat",
+      "categoryName": {
+        "en": "Sales",
+        "ar": "مبيعات"
+      },
+      "image": "",
+      "price": 600,
+      "costPrice": 230,
+      "commissionType": "FIXED",
+      "commissionValue": 30,
+      "status": "ACTIVE",
+      "createdAt": "2026-11-21T19:00:00.000Z",
+      "updatedAt": "2026-11-21T19:40:00.000Z"
+    },
+    {
+      "id": "svc-ziadat-loreal-shampoo",
+      "name": {
+        "en": "Loreal shampoo",
+        "ar": "شامبو لوريال"
+      },
+      "description": {
+        "en": "",
+        "ar": ""
+      },
+      "categoryId": "cat-ziadat",
+      "categoryName": {
+        "en": "Sales",
+        "ar": "مبيعات"
+      },
+      "image": "",
+      "price": 950,
+      "costPrice": 655,
+      "commissionType": "FIXED",
+      "commissionValue": 30,
+      "status": "ACTIVE",
+      "createdAt": "2026-11-21T19:00:00.000Z",
+      "updatedAt": "2026-11-21T19:40:00.000Z"
+    },
+    {
+      "id": "svc-ziadat-loreal-conditioner",
+      "name": {
+        "en": "Loreal conditioner",
+        "ar": "بلسم لوريال"
+      },
+      "description": {
+        "en": "",
+        "ar": ""
+      },
+      "categoryId": "cat-ziadat",
+      "categoryName": {
+        "en": "Sales",
+        "ar": "مبيعات"
+      },
+      "image": "",
+      "price": 1150,
+      "costPrice": 835,
+      "commissionType": "FIXED",
+      "commissionValue": 30,
+      "status": "ACTIVE",
+      "createdAt": "2026-11-21T19:00:00.000Z",
+      "updatedAt": "2026-11-21T19:40:00.000Z"
+    },
+    {
+      "id": "svc-ziadat-loreal-serum",
+      "name": {
+        "en": "Loreal serum",
+        "ar": "سيرم لوريال"
+      },
+      "description": {
+        "en": "",
+        "ar": ""
+      },
+      "categoryId": "cat-ziadat",
+      "categoryName": {
+        "en": "Sales",
+        "ar": "مبيعات"
+      },
+      "image": "",
+      "price": 1450,
+      "costPrice": 1117,
+      "commissionType": "FIXED",
+      "commissionValue": 30,
+      "status": "ACTIVE",
+      "createdAt": "2026-11-21T19:00:00.000Z",
+      "updatedAt": "2026-11-21T19:40:00.000Z"
+    },
+    {
+      "id": "svc-ziadat-art-cream",
+      "name": {
+        "en": "Art cream",
+        "ar": "كريم Art"
+      },
+      "description": {
+        "en": "",
+        "ar": ""
+      },
+      "categoryId": "cat-ziadat",
+      "categoryName": {
+        "en": "Sales",
+        "ar": "مبيعات"
+      },
+      "image": "",
+      "price": 950,
+      "costPrice": 619,
+      "commissionType": "FIXED",
+      "commissionValue": 30,
+      "status": "ACTIVE",
+      "createdAt": "2026-11-21T19:00:00.000Z",
+      "updatedAt": "2026-11-21T19:40:00.000Z"
+    },
+    {
+      "id": "svc-ziadat-silver-shampoo",
+      "name": {
+        "en": "Silver shampoo",
+        "ar": "شامبو سيلفر"
+      },
+      "description": {
+        "en": "",
+        "ar": ""
+      },
+      "categoryId": "cat-ziadat",
+      "categoryName": {
+        "en": "Sales",
+        "ar": "مبيعات"
+      },
+      "image": "",
+      "price": 900,
+      "costPrice": 655,
+      "commissionType": "FIXED",
+      "commissionValue": 30,
+      "status": "ACTIVE",
+      "createdAt": "2026-11-21T19:00:00.000Z",
+      "updatedAt": "2026-11-21T19:40:00.000Z"
+    },
+    {
+      "id": "svc-ziadat-jean-francis",
+      "name": {
+        "en": "Jean Francis",
+        "ar": "جون فرانسيس"
+      },
+      "description": {
+        "en": "",
+        "ar": ""
+      },
+      "categoryId": "cat-ziadat",
+      "categoryName": {
+        "en": "Sales",
+        "ar": "مبيعات"
+      },
+      "image": "",
+      "price": 650,
+      "costPrice": 390,
+      "commissionType": "FIXED",
+      "commissionValue": 30,
+      "status": "ACTIVE",
+      "createdAt": "2026-11-21T19:00:00.000Z",
+      "updatedAt": "2026-11-21T19:40:00.000Z"
+    },
+    {
+      "id": "svc-ziadat-asterle",
+      "name": {
+        "en": "Asterle",
+        "ar": "استرله"
+      },
+      "description": {
+        "en": "",
+        "ar": ""
+      },
+      "categoryId": "cat-ziadat",
+      "categoryName": {
+        "en": "Sales",
+        "ar": "مبيعات"
+      },
+      "image": "",
+      "price": 350,
+      "costPrice": 120,
+      "commissionType": "FIXED",
+      "commissionValue": 30,
+      "status": "ACTIVE",
+      "createdAt": "2026-11-21T19:00:00.000Z",
+      "updatedAt": "2026-11-21T19:40:00.000Z"
     }
   ]
 }

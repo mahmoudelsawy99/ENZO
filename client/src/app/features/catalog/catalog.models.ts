@@ -24,6 +24,8 @@ export interface ServiceRecord {
   categoryName: LocalizedText;
   image: string;
   price: number;
+  /** Purchase/cost price when the POS tile is a retail extra. POS shows `price` only. */
+  costPrice?: number;
   commissionType: 'PERCENTAGE' | 'FIXED';
   commissionValue: number;
   status: 'ACTIVE' | 'INACTIVE';

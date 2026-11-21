@@ -239,6 +239,186 @@ export async function ensureServiceCommissionRates(db: NileDatabase): Promise<bo
   return changed;
 }
 
+/** Keep this POS category tab last in the cashier menu. */
+export const MABEAAT_CATEGORY_ID = 'cat-ziadat';
+const MABEAAT_CATEGORY_NAME = { en: 'Sales', ar: 'مبيعات' } as const;
+const MABEAAT_PRODUCT_CATEGORY_ID = 'pcat-ziadat';
+const MABEAAT_BARBER_COMMISSION = { type: 'FIXED' as const, value: 30 };
+/** Old single "زيادات" tile at 120 — replaced by the retail sales tab. */
+const LEGACY_ZIADAT_SERVICE_ID = '6aefb706d5345916d38f5c34';
+
+/** Retail items sold from the POS مبيعات tab. POS tiles show sell price only. Barber commission is fixed 30. */
+export const ZIADAT_RETAIL_ITEMS: Array<{
+  id: string;
+  sku: string;
+  brand: string;
+  name: { en: string; ar: string };
+  costPrice: number;
+  sellingPrice: number;
+}> = [
+  { id: 'ziadat-onix-serum', sku: 'ONIX-SERUM', brand: 'Onix', name: { en: 'Onix serum', ar: 'سيرم Onix' }, costPrice: 250, sellingPrice: 500 },
+  { id: 'ziadat-onix-oil', sku: 'ONIX-OIL', brand: 'Onix', name: { en: 'Onix oil bath', ar: 'حمام زيت Onix' }, costPrice: 230, sellingPrice: 600 },
+  { id: 'ziadat-loreal-shampoo', sku: 'LOREAL-SHAMPOO', brand: 'Loreal', name: { en: 'Loreal shampoo', ar: 'شامبو لوريال' }, costPrice: 655, sellingPrice: 950 },
+  { id: 'ziadat-loreal-conditioner', sku: 'LOREAL-COND', brand: 'Loreal', name: { en: 'Loreal conditioner', ar: 'بلسم لوريال' }, costPrice: 835, sellingPrice: 1150 },
+  { id: 'ziadat-loreal-serum', sku: 'LOREAL-SERUM', brand: 'Loreal', name: { en: 'Loreal serum', ar: 'سيرم لوريال' }, costPrice: 1117, sellingPrice: 1450 },
+  { id: 'ziadat-art-cream', sku: 'ART-CREAM', brand: 'Art', name: { en: 'Art cream', ar: 'كريم Art' }, costPrice: 619, sellingPrice: 950 },
+  { id: 'ziadat-silver-shampoo', sku: 'SILVER-SHAMPOO', brand: 'Silver', name: { en: 'Silver shampoo', ar: 'شامبو سيلفر' }, costPrice: 655, sellingPrice: 900 },
+  { id: 'ziadat-jean-francis', sku: 'JEAN-FRANCIS', brand: 'Silver', name: { en: 'Jean Francis', ar: 'جون فرانسيس' }, costPrice: 390, sellingPrice: 650 },
+  { id: 'ziadat-asterle', sku: 'ASTERLE', brand: 'Silver', name: { en: 'Asterle', ar: 'استرله' }, costPrice: 120, sellingPrice: 350 },
+];
+
+/**
+ * Add the مبيعات POS tab (services + inventory products).
+ * Existing sales and other records are left alone. Safe to re-run.
+ */
+export async function ensureZiadatRetailMenu(db: NileDatabase): Promise<boolean> {
+  if (await one(db, 'meta', 'ziadat-retail-menu-2026-11-21')) {
+    return false;
+  }
+  const now = new Date().toISOString();
+  let changed = false;
+
+  const category = await one(db, 'serviceCategories', MABEAAT_CATEGORY_ID);
+  if (!category) {
+    await save(
+      db,
+      'serviceCategories',
+      asDoc(MABEAAT_CATEGORY_ID, {
+        name: { ...MABEAAT_CATEGORY_NAME },
+        status: 'ACTIVE',
+        createdAt: now,
+        updatedAt: now,
+      }),
+      true,
+    );
+    changed = true;
+  }
+
+  const productCategory = await one(db, 'productCategories', MABEAAT_PRODUCT_CATEGORY_ID);
+  if (!productCategory) {
+    await save(
+      db,
+      'productCategories',
+      asDoc(MABEAAT_PRODUCT_CATEGORY_ID, {
+        name: { ...MABEAAT_CATEGORY_NAME },
+        status: 'ACTIVE',
+        createdAt: now,
+        updatedAt: now,
+      }),
+      true,
+    );
+    changed = true;
+  }
+
+  for (const item of ZIADAT_RETAIL_ITEMS) {
+    const serviceId = `svc-${item.id}`;
+    const existingService = await one(db, 'services', serviceId);
+    if (!existingService) {
+      await save(
+        db,
+        'services',
+        asDoc(serviceId, {
+          name: { ...item.name },
+          description: { en: '', ar: '' },
+          categoryId: MABEAAT_CATEGORY_ID,
+          categoryName: { ...MABEAAT_CATEGORY_NAME },
+          image: '',
+          price: item.sellingPrice,
+          costPrice: item.costPrice,
+          commissionType: MABEAAT_BARBER_COMMISSION.type,
+          commissionValue: MABEAAT_BARBER_COMMISSION.value,
+          status: 'ACTIVE',
+          createdAt: now,
+          updatedAt: now,
+        }),
+        true,
+      );
+      changed = true;
+    }
+
+    const productId = `prd-${item.id}`;
+    const existingProduct = await one(db, 'products', productId);
+    if (!existingProduct) {
+      await save(
+        db,
+        'products',
+        asDoc(productId, {
+          name: { ...item.name },
+          sku: item.sku,
+          barcode: '',
+          description: { en: '', ar: '' },
+          categoryId: MABEAAT_PRODUCT_CATEGORY_ID,
+          brand: item.brand,
+          unit: 'piece',
+          costPrice: item.costPrice,
+          sellingPrice: item.sellingPrice,
+          minimumStock: 0,
+          image: '',
+          status: 'ACTIVE',
+          createdAt: now,
+          updatedAt: now,
+        }),
+        true,
+      );
+      changed = true;
+    }
+  }
+
+  const legacy = await one(db, 'services', LEGACY_ZIADAT_SERVICE_ID);
+  if (legacy && str(legacy, 'status') !== 'INACTIVE') {
+    await save(db, 'services', asDoc(legacy.id, { ...legacy, status: 'INACTIVE', updatedAt: now }), true);
+    changed = true;
+  }
+
+  await save(db, 'meta', asDoc('ziadat-retail-menu-2026-11-21', { appliedAt: now, count: ZIADAT_RETAIL_ITEMS.length }), true);
+  return changed;
+}
+
+/** Rename زيادات → مبيعات and set fixed barber commission 30 on those retail items. */
+export async function ensureMabeaatTabAndCommission(db: NileDatabase): Promise<boolean> {
+  if (await one(db, 'meta', 'mabeaat-tab-commission-30-2026-11-21')) {
+    return false;
+  }
+  const now = new Date().toISOString();
+  let changed = false;
+
+  for (const collection of ['serviceCategories', 'productCategories'] as const) {
+    const category = await one(db, collection, collection === 'serviceCategories' ? MABEAAT_CATEGORY_ID : MABEAAT_PRODUCT_CATEGORY_ID);
+    if (category) {
+      await save(
+        db,
+        collection,
+        asDoc(category.id, { ...category, name: { ...MABEAAT_CATEGORY_NAME }, updatedAt: now }),
+        true,
+      );
+      changed = true;
+    }
+  }
+
+  for (const item of ZIADAT_RETAIL_ITEMS) {
+    const serviceId = `svc-${item.id}`;
+    const service = await one(db, 'services', serviceId);
+    if (!service) continue;
+    await save(
+      db,
+      'services',
+      asDoc(service.id, {
+        ...service,
+        categoryId: MABEAAT_CATEGORY_ID,
+        categoryName: { ...MABEAAT_CATEGORY_NAME },
+        commissionType: MABEAAT_BARBER_COMMISSION.type,
+        commissionValue: MABEAAT_BARBER_COMMISSION.value,
+        updatedAt: now,
+      }),
+      true,
+    );
+    changed = true;
+  }
+
+  await save(db, 'meta', asDoc('mabeaat-tab-commission-30-2026-11-21', { appliedAt: now }), true);
+  return changed;
+}
+
 /** The haircut named قص moved from 220 to 320. Apply it once on an existing database. */
 export async function ensureHaircutPrice(db: NileDatabase): Promise<boolean> {
   if (await one(db, 'meta', 'price-qass-320')) {

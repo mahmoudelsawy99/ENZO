@@ -3,7 +3,7 @@ import { GoogleSyncService } from '../google/google-sync.service';
 import { nileDb, openNileDatabase } from './local-database';
 import { LocalBackupService } from './local-backup.service';
 import { dispatchLocal } from './local-route';
-import { dropRetiredServices, dropRetiredStaff, ensureAhmedCashier, ensureCashierExport, ensureCashierSlimMenu, ensureHaircutPrice, ensureHananCashier, ensureMetaweeCashier, ensureSawyAdmin, ensureSeed, ensureServiceCommissionRates } from './local-seed';
+import { dropRetiredServices, dropRetiredStaff, ensureAhmedCashier, ensureCashierExport, ensureCashierSlimMenu, ensureHaircutPrice, ensureHananCashier, ensureMabeaatTabAndCommission, ensureMetaweeCashier, ensureSawyAdmin, ensureSeed, ensureServiceCommissionRates, ensureZiadatRetailMenu } from './local-seed';
 import { bindLocalWrites, localUserId, markLocalWrite } from './local-session';
 import { isLocalFirst } from './local-mode';
 
@@ -82,7 +82,9 @@ export class LocalGateway {
     await this.backup.hydrate();
     const priceChanged = await ensureHaircutPrice(nileDb);
     const commissionChanged = await ensureServiceCommissionRates(nileDb);
-    if (servicesDropped || ahmedAdded || metaweeAdded || cashierSlim || priceChanged || commissionChanged) {
+    const ziadatAdded = await ensureZiadatRetailMenu(nileDb);
+    const mabeaatUpdated = await ensureMabeaatTabAndCommission(nileDb);
+    if (servicesDropped || ahmedAdded || metaweeAdded || cashierSlim || priceChanged || commissionChanged || ziadatAdded || mabeaatUpdated) {
       this.backup.markDirty();
     }
   }

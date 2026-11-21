@@ -20,6 +20,7 @@ import { activeServices } from '../appointments/shop-services';
 import { CatalogApi } from '../catalog/catalog.api';
 import { localizedLabel, type CustomerRecord, type ServiceRecord } from '../catalog/catalog.models';
 import { PaymentAllocation } from '../payments/payment-allocation';
+import { MABEAAT_CATEGORY_ID } from '../../core/local/local-seed';
 import { CashierLocalStore } from './cashier-local.store';
 import { FinanceApi } from './finance.api';
 import type { SaleRecord } from './finance.models';
@@ -270,7 +271,9 @@ export class PosOrderPage {
       seen.add(service.categoryId);
       categories.push({ id: service.categoryId, label: localizedLabel(service.categoryName, this.i18n.language()) || service.categoryId });
     }
-    return categories;
+    const last = categories.filter((category) => category.id === MABEAAT_CATEGORY_ID);
+    const rest = categories.filter((category) => category.id !== MABEAAT_CATEGORY_ID);
+    return [...rest, ...last];
   }
 
   protected visibleServices(): ServiceRecord[] {
