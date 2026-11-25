@@ -384,10 +384,10 @@ export class PosOrderPage {
   }
 
   protected referralOptions(): SelectOption[] {
-    return [
-      { value: '', label: this.i18n.translate('finance.referralSourceEmpty') },
-      ...REFERRAL_SOURCES.map((source) => ({ value: source, label: this.i18n.translate(`finance.referralSources.${source}`) })),
-    ];
+    return REFERRAL_SOURCES.map((source) => ({
+      value: source,
+      label: this.i18n.translate(`finance.referralSources.${source}`),
+    }));
   }
 
   protected money(value: number): string {

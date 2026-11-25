@@ -1,4 +1,4 @@
-import { Component, booleanAttribute, input } from '@angular/core';
+import { Component, booleanAttribute, computed, input, signal } from '@angular/core';
 import { Field } from './field';
 import { EnzoValueAccessor, createFieldId, fieldMessageId } from './value-accessor';
 
@@ -11,14 +11,17 @@ import { EnzoValueAccessor, createFieldId, fieldMessageId } from './value-access
       [hint]="hint()"
       [error]="shownError()"
       [required]="required()"
+      [floating]="floating()"
+      [active]="isFloatingActive()"
       [inputId]="fieldId"
     >
       <input
         class="enzo-control"
+        [class.enzo-control-floating]="floating()"
         [id]="fieldId"
         [attr.type]="type()"
         [attr.name]="name()"
-        [attr.placeholder]="placeholder()"
+        [attr.placeholder]="floating() ? ' ' : placeholder()"
         [attr.autocomplete]="autocomplete()"
         [attr.aria-invalid]="shownError() ? 'true' : 'false'"
         [attr.aria-describedby]="describedBy()"
@@ -26,7 +29,8 @@ import { EnzoValueAccessor, createFieldId, fieldMessageId } from './value-access
         [value]="value()"
         [disabled]="isDisabled()"
         (input)="onInput($event)"
-        (blur)="markTouched()"
+        (focus)="focused.set(true)"
+        (blur)="onBlur()"
       />
     </enzo-field>
   `,
@@ -40,7 +44,10 @@ export class TextInput extends EnzoValueAccessor<string> {
   readonly autocomplete = input('off');
   readonly type = input<'text' | 'email' | 'tel' | 'search' | 'time' | 'number'>('text');
   readonly required = input(false, { transform: booleanAttribute });
+  readonly floating = input(true, { transform: booleanAttribute });
   readonly fieldId = createFieldId();
+  protected readonly focused = signal(false);
+  protected readonly isFloatingActive = computed(() => this.focused() || this.value().trim().length > 0);
 
   protected emptyValue(): string {
     return '';
@@ -60,5 +67,10 @@ export class TextInput extends EnzoValueAccessor<string> {
     if (target instanceof HTMLInputElement) {
       this.commit(target.value);
     }
+  }
+
+  protected onBlur(): void {
+    this.focused.set(false);
+    this.markTouched();
   }
 }

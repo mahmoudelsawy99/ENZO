@@ -21,6 +21,8 @@ export interface SelectOption {
       [hint]="hint()"
       [error]="shownError()"
       [required]="required()"
+      [floating]="floating()"
+      [active]="isFloatingActive()"
       [inputId]="fieldId"
     >
       <button
@@ -29,6 +31,7 @@ export interface SelectOption {
         cdkOverlayOrigin
         type="button"
         class="enzo-control flex items-center justify-between gap-2 text-start"
+        [class.enzo-control-floating]="floating()"
         [id]="fieldId"
         [disabled]="isDisabled()"
         [attr.aria-haspopup]="'listbox'"
@@ -37,11 +40,12 @@ export interface SelectOption {
         [attr.aria-describedby]="describedBy()"
         [attr.aria-required]="required()"
         (click)="toggle()"
-        (blur)="markTouched()"
+        (focus)="focused.set(true)"
+        (blur)="onBlur()"
         (keydown)="onTriggerKey($event)"
       >
-        <span class="truncate" [class.text-text-secondary]="!selected()">
-          {{ selected()?.label || placeholder() }}
+        <span class="truncate" [class.text-text-secondary]="!hasValue()" [class.opacity-0]="floating() && !isFloatingActive()">
+          {{ displayLabel() }}
         </span>
         <enzo-icon name="chevron-down" class="size-4 text-text-secondary" />
       </button>
@@ -109,10 +113,12 @@ export class Select extends EnzoValueAccessor<string> {
   readonly error = input('');
   readonly placeholder = input('');
   readonly required = input(false, { transform: booleanAttribute });
+  readonly floating = input(true, { transform: booleanAttribute });
   readonly options = input<readonly SelectOption[]>([]);
   readonly searchable = input(false, { transform: booleanAttribute });
   readonly query = signal('');
   readonly open = signal(false);
+  readonly focused = signal(false);
   readonly activeIndex = signal(0);
   readonly panelWidth = signal(0);
   readonly positions = MENU_POSITIONS;
@@ -122,6 +128,8 @@ export class Select extends EnzoValueAccessor<string> {
   private readonly search = viewChild<ElementRef<HTMLInputElement>>('search');
 
   readonly selected = computed(() => this.options().find((option) => option.value === this.value()));
+  readonly hasValue = computed(() => this.value().trim().length > 0);
+  readonly isFloatingActive = computed(() => this.open() || this.focused() || this.hasValue());
   readonly visibleOptions = computed(() => {
     const query = this.query().trim().toLowerCase();
     const options = this.options();
@@ -141,6 +149,18 @@ export class Select extends EnzoValueAccessor<string> {
 
   protected describedBy(): string | null {
     return this.shownError() || this.hint() ? fieldMessageId(this.fieldId) : null;
+  }
+
+  protected displayLabel(): string {
+    if (!this.hasValue()) {
+      return this.placeholder();
+    }
+    return this.selected()?.label || this.placeholder();
+  }
+
+  protected onBlur(): void {
+    this.focused.set(false);
+    this.markTouched();
   }
 
   protected toggle(): void {

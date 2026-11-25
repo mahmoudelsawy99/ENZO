@@ -46,6 +46,52 @@ html[lang='ar'] .font-display {
   transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
+.enzo-field-floating {
+  position: relative;
+}
+
+.enzo-floating-label {
+  position: absolute;
+  inset-inline-start: 0.75rem;
+  top: 50%;
+  z-index: 1;
+  max-width: calc(100% - 2.5rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translateY(-50%);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  transition:
+    top 0.15s ease,
+    transform 0.15s ease,
+    font-size 0.15s ease,
+    color 0.15s ease,
+    background-color 0.15s ease,
+    padding 0.15s ease;
+}
+
+.enzo-field-floating.is-active .enzo-floating-label {
+  top: 0;
+  padding-inline: 0.25rem;
+  background: var(--color-input);
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.enzo-field-floating.is-active.is-invalid .enzo-floating-label {
+  color: var(--color-danger);
+}
+
+.enzo-control-floating {
+  height: 3rem;
+  padding-block-start: 0.9rem;
+}
+
 .enzo-control[type='search'] {
   appearance: none;
 }
