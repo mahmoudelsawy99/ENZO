@@ -15,6 +15,8 @@ export interface SavedOrder {
   total: number;
   cash: number;
   amountDue: number;
+  referralSource?: string;
+  referralOther?: string;
   services: SavedOrderLine[];
   payments: Array<{ method: string; amount: number; referenceNumber: string }>;
 }

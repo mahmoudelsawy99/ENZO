@@ -18,8 +18,6 @@
     { id: 'ziadat-jean-francis', sku: 'JEAN-FRANCIS', brand: 'Silver', name: { en: 'Jean Francis', ar: 'جون فرانسيس' }, cost: 390, sell: 650 },
     { id: 'ziadat-asterle', sku: 'ASTERLE', brand: 'Silver', name: { en: 'Asterle', ar: 'استرله' }, cost: 120, sell: 350 },
   ];
-  const LEGACY = '6aefb706d5345916d38f5c34';
-
   const db = await new Promise((resolve, reject) => {
     const req = indexedDB.open('nile-barbers');
     req.onsuccess = () => resolve(req.result);
@@ -86,11 +84,6 @@
       createdAt: now,
       updatedAt: now,
     });
-  }
-
-  const legacy = await get(`services:${LEGACY}`);
-  if (legacy?.data) {
-    putDoc('services', LEGACY, { ...legacy.data, status: 'INACTIVE', updatedAt: now }, 'INACTIVE');
   }
 
   putDoc('meta', 'ziadat-retail-menu-2026-11-21', { importedAt: now, count: ITEMS.length }, '');

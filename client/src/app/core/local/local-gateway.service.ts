@@ -3,7 +3,7 @@ import { GoogleSyncService } from '../google/google-sync.service';
 import { nileDb, openNileDatabase } from './local-database';
 import { LocalBackupService } from './local-backup.service';
 import { dispatchLocal } from './local-route';
-import { dropRetiredServices, dropRetiredStaff, ensureAhmedCashier, ensureCashierExport, ensureCashierSlimMenu, ensureHaircutPrice, ensureHananCashier, ensureMabeaatTabAndCommission, ensureMetaweeCashier, ensureSawyAdmin, ensureSeed, ensureServiceCommissionRates, ensureZiadatRetailMenu } from './local-seed';
+import { dropRetiredServices, dropRetiredStaff, ensureAhmedCashier, ensureCashierExport, ensureCashierSlimMenu, ensureHaircutPrice, ensureHananCashier, ensureMabeaatLorealOilBaths, ensureMabeaatTabAndCommission, ensureMetaweeCashier, ensureSawyAdmin, ensureSeed, ensureServiceCommissionRates, ensureZiadatRetailMenu, ensureZiadatService } from './local-seed';
 import { bindLocalWrites, localUserId, markLocalWrite } from './local-session';
 import { isLocalFirst } from './local-mode';
 
@@ -84,7 +84,9 @@ export class LocalGateway {
     const commissionChanged = await ensureServiceCommissionRates(nileDb);
     const ziadatAdded = await ensureZiadatRetailMenu(nileDb);
     const mabeaatUpdated = await ensureMabeaatTabAndCommission(nileDb);
-    if (servicesDropped || ahmedAdded || metaweeAdded || cashierSlim || priceChanged || commissionChanged || ziadatAdded || mabeaatUpdated) {
+    const ziadatService = await ensureZiadatService(nileDb);
+    const lorealOils = await ensureMabeaatLorealOilBaths(nileDb);
+    if (servicesDropped || ahmedAdded || metaweeAdded || cashierSlim || priceChanged || commissionChanged || ziadatAdded || mabeaatUpdated || ziadatService || lorealOils) {
       this.backup.markDirty();
     }
   }

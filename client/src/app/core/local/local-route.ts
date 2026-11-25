@@ -940,6 +940,8 @@ async function createOrder(ctx: Ctx): Promise<Doc> {
     payments: asList<Payload>(ctx.body['payments']),
     tips: [],
     idempotencyKey: str(ctx.body, 'idempotencyKey'),
+    referralSource: str(ctx.body, 'referralSource'),
+    referralOther: str(ctx.body, 'referralOther'),
   }, lines.map((line) => ({ ...line, employeeId: line.barberEmployeeId })));
   return sale;
 }
@@ -1013,6 +1015,8 @@ async function persistSale(ctx: Ctx, input: {
   payments: Payload[];
   tips: Payload[];
   idempotencyKey: string;
+  referralSource?: string;
+  referralOther?: string;
 }, commissionLines: Array<{ serviceId: string; lineTotal: number; quantity: number; commissionType: string; commissionValue: number; employeeId: string }>): Promise<Doc> {
   const now = new Date().toISOString();
   const id = uid('sale');
@@ -1059,6 +1063,8 @@ async function persistSale(ctx: Ctx, input: {
     refunds: [],
     tips,
     commissions,
+    referralSource: input.referralSource ?? '',
+    referralOther: input.referralOther ?? '',
     idempotencyKey: input.idempotencyKey,
   }));
 }

@@ -15,6 +15,8 @@ export interface LocalOrderInput {
   barberEmployeeId: string;
   extraBarberIds?: string[];
   customer: { fullName: string; phone: string };
+  referralSource?: string;
+  referralOther?: string;
   services: Array<{ serviceId: string; quantity: number; barberEmployeeId?: string }>;
   idempotencyKey: string;
   additionalDiscount: number;
@@ -114,6 +116,8 @@ export class CashierLocalStore {
       status: 'PAID',
       tipTotal: 0,
       createdAt: now,
+      referralSource: input.referralSource?.trim() || '',
+      referralOther: input.referralOther?.trim() || '',
       payments: input.payments.map((payment, index) => ({
         id: `${id}-pay-${index + 1}`,
         method: payment.method,

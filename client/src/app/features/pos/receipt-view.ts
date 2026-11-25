@@ -25,6 +25,16 @@ import type { SaleRecord } from './finance.models';
           @if (receipt.customerPhone) {
             <p class="text-text-secondary">{{ receipt.customerPhone }}</p>
           }
+          @if (receipt.referralSource) {
+            <p class="text-text-secondary">
+              {{ 'finance.referralSource' | t }}:
+              @if (receipt.referralSource === 'OTHER' && receipt.referralOther) {
+                {{ receipt.referralOther }}
+              } @else {
+                {{ 'finance.referralSources.' + receipt.referralSource | t }}
+              }
+            </p>
+          }
           <p class="text-text-secondary">{{ 'finance.cashier' | t }}: {{ receipt.cashierName }}</p>
           <ul class="mt-2 grid gap-2">
             @for (item of receipt.items; track $index) {

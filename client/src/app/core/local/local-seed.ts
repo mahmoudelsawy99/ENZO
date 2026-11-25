@@ -244,8 +244,8 @@ export const MABEAAT_CATEGORY_ID = 'cat-ziadat';
 const MABEAAT_CATEGORY_NAME = { en: 'Sales', ar: 'مبيعات' } as const;
 const MABEAAT_PRODUCT_CATEGORY_ID = 'pcat-ziadat';
 const MABEAAT_BARBER_COMMISSION = { type: 'FIXED' as const, value: 30 };
-/** Old single "زيادات" tile at 120 — replaced by the retail sales tab. */
-const LEGACY_ZIADAT_SERVICE_ID = '6aefb706d5345916d38f5c34';
+/** Standalone زيادات service (price 120, commission 0) in the haircut category. */
+const ZIADAT_SERVICE_ID = '6aefb706d5345916d38f5c34';
 
 /** Retail items sold from the POS مبيعات tab. POS tiles show sell price only. Barber commission is fixed 30. */
 export const ZIADAT_RETAIL_ITEMS: Array<{
@@ -265,7 +265,68 @@ export const ZIADAT_RETAIL_ITEMS: Array<{
   { id: 'ziadat-silver-shampoo', sku: 'SILVER-SHAMPOO', brand: 'Silver', name: { en: 'Silver shampoo', ar: 'شامبو سيلفر' }, costPrice: 655, sellingPrice: 900 },
   { id: 'ziadat-jean-francis', sku: 'JEAN-FRANCIS', brand: 'Silver', name: { en: 'Jean Francis', ar: 'جون فرانسيس' }, costPrice: 390, sellingPrice: 650 },
   { id: 'ziadat-asterle', sku: 'ASTERLE', brand: 'Silver', name: { en: 'Asterle', ar: 'استرله' }, costPrice: 120, sellingPrice: 350 },
+  { id: 'ziadat-loreal-oil-small', sku: 'LOREAL-OIL-S', brand: 'Loreal', name: { en: 'Loreal oil bath small', ar: 'حمام زيت لوريال صغير' }, costPrice: 1130, sellingPrice: 1650 },
+  { id: 'ziadat-loreal-oil-large', sku: 'LOREAL-OIL-L', brand: 'Loreal', name: { en: 'Loreal oil bath large', ar: 'حمام زيت لوريال كبير' }, costPrice: 1130, sellingPrice: 2100 },
 ];
+
+const MABEAAT_LOREAL_OIL_ITEMS = ZIADAT_RETAIL_ITEMS.filter((item) => item.id === 'ziadat-loreal-oil-small' || item.id === 'ziadat-loreal-oil-large');
+
+async function upsertMabeaatRetailItem(
+  db: NileDatabase,
+  item: (typeof ZIADAT_RETAIL_ITEMS)[number],
+  now: string,
+): Promise<boolean> {
+  let changed = false;
+  const serviceId = `svc-${item.id}`;
+  if (!(await one(db, 'services', serviceId))) {
+    await save(
+      db,
+      'services',
+      asDoc(serviceId, {
+        name: { ...item.name },
+        description: { en: '', ar: '' },
+        categoryId: MABEAAT_CATEGORY_ID,
+        categoryName: { ...MABEAAT_CATEGORY_NAME },
+        image: '',
+        price: item.sellingPrice,
+        costPrice: item.costPrice,
+        commissionType: MABEAAT_BARBER_COMMISSION.type,
+        commissionValue: MABEAAT_BARBER_COMMISSION.value,
+        status: 'ACTIVE',
+        createdAt: now,
+        updatedAt: now,
+      }),
+      true,
+    );
+    changed = true;
+  }
+  const productId = `prd-${item.id}`;
+  if (!(await one(db, 'products', productId))) {
+    await save(
+      db,
+      'products',
+      asDoc(productId, {
+        name: { ...item.name },
+        sku: item.sku,
+        barcode: '',
+        description: { en: '', ar: '' },
+        categoryId: MABEAAT_PRODUCT_CATEGORY_ID,
+        brand: item.brand,
+        unit: 'piece',
+        costPrice: item.costPrice,
+        sellingPrice: item.sellingPrice,
+        minimumStock: 0,
+        image: '',
+        status: 'ACTIVE',
+        createdAt: now,
+        updatedAt: now,
+      }),
+      true,
+    );
+    changed = true;
+  }
+  return changed;
+}
 
 /**
  * Add the مبيعات POS tab (services + inventory products).
@@ -364,14 +425,56 @@ export async function ensureZiadatRetailMenu(db: NileDatabase): Promise<boolean>
     }
   }
 
-  const legacy = await one(db, 'services', LEGACY_ZIADAT_SERVICE_ID);
-  if (legacy && str(legacy, 'status') !== 'INACTIVE') {
-    await save(db, 'services', asDoc(legacy.id, { ...legacy, status: 'INACTIVE', updatedAt: now }), true);
-    changed = true;
-  }
-
   await save(db, 'meta', asDoc('ziadat-retail-menu-2026-11-21', { appliedAt: now, count: ZIADAT_RETAIL_ITEMS.length }), true);
   return changed;
+}
+
+/** Add L'Oreal oil bath small/large to the مبيعات tab on shops that already had the first retail list. */
+export async function ensureMabeaatLorealOilBaths(db: NileDatabase): Promise<boolean> {
+  if (await one(db, 'meta', 'mabeaat-loreal-oil-baths-2026-11-22')) {
+    return false;
+  }
+  const now = new Date().toISOString();
+  let changed = false;
+  for (const item of MABEAAT_LOREAL_OIL_ITEMS) {
+    if (await upsertMabeaatRetailItem(db, item, now)) {
+      changed = true;
+    }
+  }
+  await save(db, 'meta', asDoc('mabeaat-loreal-oil-baths-2026-11-22', { appliedAt: now, count: MABEAAT_LOREAL_OIL_ITEMS.length }), true);
+  return changed;
+}
+
+/** Keep the standalone زيادات service active at 120 with no barber commission. */
+export async function ensureZiadatService(db: NileDatabase): Promise<boolean> {
+  if (await one(db, 'meta', 'ziadat-service-120-2026-11-22')) {
+    return false;
+  }
+  const now = new Date().toISOString();
+  const existing = await one(db, 'services', ZIADAT_SERVICE_ID);
+  const haircutCategoryId = '6aefb704d5345916d38f5bfc';
+  const haircutCategoryName = { en: 'Haircut and beard', ar: 'قص الشعر / الذقن' };
+  await save(
+    db,
+    'services',
+    asDoc(ZIADAT_SERVICE_ID, {
+      ...(existing ?? {}),
+      name: { en: 'زيادات', ar: 'زيادات' },
+      description: existing?.['description'] ?? { en: '', ar: '' },
+      categoryId: haircutCategoryId,
+      categoryName: haircutCategoryName,
+      image: str(existing, 'image'),
+      price: 120,
+      commissionType: 'PERCENTAGE',
+      commissionValue: 0,
+      status: 'ACTIVE',
+      createdAt: str(existing, 'createdAt') || now,
+      updatedAt: now,
+    }),
+    true,
+  );
+  await save(db, 'meta', asDoc('ziadat-service-120-2026-11-22', { appliedAt: now, price: 120 }), true);
+  return true;
 }
 
 /** Rename زيادات → مبيعات and set fixed barber commission 30 on those retail items. */

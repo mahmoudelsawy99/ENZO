@@ -1,9 +1,10 @@
 Set WshShell = CreateObject("WScript.Shell")
 Set fso = CreateObject("Scripting.FileSystemObject")
 
-WshShell.CurrentDirectory = "D:\work space\Akram"
+scriptDir = fso.GetParentFolderName(WScript.ScriptFullName)
+WshShell.CurrentDirectory = scriptDir
 
-If Not fso.FileExists("D:\work space\Akram\client\dist\client\browser\index.html") Then
+If Not fso.FileExists(scriptDir & "\client\dist\client\browser\index.html") Then
     MsgBox "Nile Barbers is not built yet." & vbCrLf & "Please contact the administrator.", vbExclamation, "Nile Barbers"
     WScript.Quit 1
 End If

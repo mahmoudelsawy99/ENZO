@@ -30,6 +30,7 @@ import { ReceiptView } from './receipt-view';
 type PaymentGroup = FormGroup<{ method: FormControl<string>; amount: FormControl<string>; referenceNumber: FormControl<string> }>;
 
 const METHODS = ['CASH', 'VISA', 'WALLET', 'INSTAPAY', 'OTHER'];
+const REFERRAL_SOURCES = ['FRIEND', 'FACEBOOK', 'INSTAGRAM', 'WHATSAPP', 'GOOGLE', 'WALK_IN', 'OTHER'] as const;
 
 @Component({
   selector: 'app-pos-order-page',
@@ -111,6 +112,10 @@ const METHODS = ['CASH', 'VISA', 'WALLET', 'INSTAPAY', 'OTHER'];
                   <enzo-text-input formControlName="phone" type="tel" [label]="'customers.phone' | t" />
                 </div>
               </div>
+              <enzo-select formControlName="referralSource" [label]="'finance.referralSource' | t" [options]="referralOptions()" />
+              @if (referralIsOther()) {
+                <enzo-text-input formControlName="referralOther" [label]="'finance.referralOther' | t" [required]="true" />
+              }
             </div>
             <div #linesPane class="enzo-scroll grid min-h-0 flex-1 content-start gap-2 overflow-y-auto overscroll-contain p-3" formArrayName="services">
               @if (orderLines().length === 0) {
@@ -183,6 +188,7 @@ export class PosOrderPage {
   readonly barbers = signal<Array<{ id: string; fullName: string }>>([...SHOP_BARBERS]);
   readonly customerMatches = signal<CustomerRecord[]>([]);
   readonly shiftOpen = signal(true);
+  readonly referralIsOther = signal(false);
   private readonly revision = signal(0);
   private bootstrapped = false;
   private pickingCustomer = false;
@@ -194,6 +200,8 @@ export class PosOrderPage {
     barberEmployeeId: [''],
     fullName: [''],
     phone: [''],
+    referralSource: [''],
+    referralOther: [''],
     totalText: ['0'],
     cashText: ['0'],
     services: this.formBuilder.array<ReturnType<PosOrderPage['serviceGroup']>>([]),
@@ -213,6 +221,12 @@ export class PosOrderPage {
     this.form.controls.fullName.valueChanges.subscribe((value) => {
       if (!this.pickingCustomer) {
         this.scheduleCustomerSearch(value);
+      }
+    });
+    this.form.controls.referralSource.valueChanges.subscribe((source) => {
+      this.referralIsOther.set(source === 'OTHER');
+      if (source !== 'OTHER') {
+        this.form.controls.referralOther.setValue('');
       }
     });
     this.form.controls.branchId.valueChanges.subscribe((branchId) => {
@@ -369,6 +383,13 @@ export class PosOrderPage {
     return METHODS.filter((method) => method !== 'CASH').map((method) => ({ value: method, label: this.i18n.translate(`finance.methods.${method}`) }));
   }
 
+  protected referralOptions(): SelectOption[] {
+    return [
+      { value: '', label: this.i18n.translate('finance.referralSourceEmpty') },
+      ...REFERRAL_SOURCES.map((source) => ({ value: source, label: this.i18n.translate(`finance.referralSources.${source}`) })),
+    ];
+  }
+
   protected money(value: number): string {
     return this.i18n.formatNumber(value);
   }
@@ -424,6 +445,12 @@ export class PosOrderPage {
       this.error.set(this.i18n.translate('finance.paymentMismatch'));
       return;
     }
+    const referralSource = value.referralSource.trim();
+    const referralOther = value.referralOther.trim();
+    if (referralSource === 'OTHER' && !referralOther) {
+      this.error.set(this.i18n.translate('finance.referralOtherRequired'));
+      return;
+    }
     saveOrderFiles({
       savedAt: new Date().toISOString(),
       customer: value.fullName.trim(),
@@ -437,6 +464,8 @@ export class PosOrderPage {
       total,
       cash,
       amountDue: total,
+      referralSource,
+      referralOther: referralSource === 'OTHER' ? referralOther : '',
       services: services.map((line) => {
         const service = this.services().find((item) => item.id === line.serviceId);
         return {
@@ -456,6 +485,8 @@ export class PosOrderPage {
       barberEmployeeId: primaryBarber,
       extraBarberIds: [...new Set(services.map((line) => line.barberEmployeeId))].filter((id) => id !== primaryBarber),
       customer: { fullName: value.fullName.trim(), phone },
+      referralSource,
+      referralOther: referralSource === 'OTHER' ? referralOther : '',
       services,
       idempotencyKey: this.idempotencyKey,
       additionalDiscount: Math.round(discount * 100) / 100,

@@ -982,9 +982,9 @@
       "price": 120,
       "commissionType": "PERCENTAGE",
       "commissionValue": 0,
-      "status": "INACTIVE",
+      "status": "ACTIVE",
       "createdAt": "2026-11-07T23:40:54.502Z",
-      "updatedAt": "2026-11-21T19:00:00.000Z"
+      "updatedAt": "2026-11-22T17:00:00.000Z"
     },
     {
       "id": "6aefb705d5345916d38f5c04",
@@ -1615,6 +1615,54 @@
       "status": "ACTIVE",
       "createdAt": "2026-11-21T19:00:00.000Z",
       "updatedAt": "2026-11-21T19:40:00.000Z"
+    },
+    {
+      "id": "svc-ziadat-loreal-oil-small",
+      "name": {
+        "en": "Loreal oil bath small",
+        "ar": "حمام زيت لوريال صغير"
+      },
+      "description": {
+        "en": "",
+        "ar": ""
+      },
+      "categoryId": "cat-ziadat",
+      "categoryName": {
+        "en": "Sales",
+        "ar": "مبيعات"
+      },
+      "image": "",
+      "price": 1650,
+      "costPrice": 1130,
+      "commissionType": "FIXED",
+      "commissionValue": 30,
+      "status": "ACTIVE",
+      "createdAt": "2026-11-22T17:30:00.000Z",
+      "updatedAt": "2026-11-22T17:30:00.000Z"
+    },
+    {
+      "id": "svc-ziadat-loreal-oil-large",
+      "name": {
+        "en": "Loreal oil bath large",
+        "ar": "حمام زيت لوريال كبير"
+      },
+      "description": {
+        "en": "",
+        "ar": ""
+      },
+      "categoryId": "cat-ziadat",
+      "categoryName": {
+        "en": "Sales",
+        "ar": "مبيعات"
+      },
+      "image": "",
+      "price": 2100,
+      "costPrice": 1130,
+      "commissionType": "FIXED",
+      "commissionValue": 30,
+      "status": "ACTIVE",
+      "createdAt": "2026-11-22T17:30:00.000Z",
+      "updatedAt": "2026-11-22T17:30:00.000Z"
     }
   ]
 }

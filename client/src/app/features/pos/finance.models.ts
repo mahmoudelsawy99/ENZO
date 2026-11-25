@@ -113,6 +113,8 @@ export interface SaleRecord {
   status: string;
   tipTotal: number;
   createdAt: string;
+  referralSource?: string;
+  referralOther?: string;
   payments: SalePayment[];
   refunds: SaleRefund[];
   tips: Array<{ id: string; employeeId: string; employeeName: string; amount: number; method: string }>;
