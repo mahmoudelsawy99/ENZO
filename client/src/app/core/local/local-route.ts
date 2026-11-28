@@ -1842,12 +1842,18 @@ async function cashierDayReport(
       current.before = roundMoney(current.before + before);
       byPerson.set(employeeId || name, current);
     }
+    const cashBefore = num(sale, 'subtotal') || before;
+    const offer = num(sale, 'manualDiscount') || num(sale, 'totalDiscount') || 0;
+    const cashAfter = num(sale, 'totalAmount') || before;
     return {
       transaction: str(sale, 'transactionNumber'),
       customer: str(sale, 'customerName'),
       barber: names.size > 0 ? [...names].join('، ') : str(sale, 'barberName'),
       cashier: str(sale, 'cashierName'),
       method: asList<Payload>(sale['payments']).map((payment) => str(payment, 'method')).filter(Boolean).join(', '),
+      cashBefore,
+      offer,
+      cashAfter,
       cash: paidByMethod(sale, 'CASH'),
       visa: paidByMethod(sale, 'VISA'),
       amount: before,
@@ -1859,12 +1865,18 @@ async function cashierDayReport(
   const net = roundMoney(gross - refunds);
   const total = roundMoney(buckets.CASH + buckets.VISA + buckets.WALLET + buckets.INSTAPAY + buckets.OTHER) || net;
   const afterCommission = roundMoney(total - commissionTotal);
+  const cashBeforeTotal = roundMoney(sales.reduce((sum, sale) => sum + (num(sale, 'subtotal') || num(sale, 'paidAmount') || num(sale, 'totalAmount')), 0));
+  const offerTotal = roundMoney(sales.reduce((sum, sale) => sum + (num(sale, 'manualDiscount') || num(sale, 'totalDiscount') || 0), 0));
+  const cashAfterTotal = roundMoney(sales.reduce((sum, sale) => sum + (num(sale, 'totalAmount') || num(sale, 'paidAmount') || 0), 0));
   rows.push({
     transaction: 'TOTAL',
     customer: '',
     barber: '',
     cashier: '',
     method: '',
+    cashBefore: cashBeforeTotal,
+    offer: offerTotal,
+    cashAfter: cashAfterTotal,
     cash: buckets.CASH,
     visa: buckets.VISA,
     amount: total,
@@ -1879,6 +1891,9 @@ async function cashierDayReport(
       barber: person.name,
       cashier: '',
       method: '',
+      cashBefore: person.before,
+      offer: 0,
+      cashAfter: roundMoney(person.before - person.commission),
       cash: 0,
       visa: 0,
       amount: person.before,
@@ -1892,6 +1907,9 @@ async function cashierDayReport(
     barber: '',
     cashier: '',
     method: '',
+    cashBefore: cashAfterTotal,
+    offer: offerTotal,
+    cashAfter: afterCommission,
     cash: 0,
     visa: 0,
     amount: afterCommission,
@@ -1910,6 +1928,9 @@ async function cashierDayReport(
       beforeCommission: total,
       commission: commissionTotal,
       afterCommission,
+      cashBefore: cashBeforeTotal,
+      offer: offerTotal,
+      cashAfter: cashAfterTotal,
       total,
       cash: buckets.CASH,
       visa: buckets.VISA,
@@ -1922,7 +1943,7 @@ async function cashierDayReport(
       expectedCash: shifts.length ? roundMoney(shifts.reduce((sum, shift) => sum + num(shift, 'expectedCash'), 0)) : buckets.CASH,
       shifts: shifts.length,
     },
-    columns: ['transaction', 'customer', 'barber', 'cashier', 'method', 'cash', 'visa', 'amount', 'commission', 'after'],
+    columns: ['transaction', 'customer', 'barber', 'cashier', 'method', 'cashBefore', 'offer', 'cashAfter', 'cash', 'visa', 'amount', 'commission', 'after'],
     rows,
     page: 1,
     pageSize: rows.length || 20,

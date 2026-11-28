@@ -147,7 +147,22 @@ const REFERRAL_SOURCES = ['FRIEND', 'FACEBOOK', 'INSTAGRAM', 'WHATSAPP', 'GOOGLE
                 <span class="text-sm text-text-secondary">{{ 'finance.total' | t }}</span>
                 <span class="text-3xl font-semibold leading-none">{{ money(amountDue()) }}</span>
               </div>
-              <enzo-text-input formControlName="cashText" type="number" [label]="'finance.cashAmount' | t" />
+              <enzo-text-input formControlName="offerText" type="number" floating [label]="'finance.offer' | t" />
+              <div class="grid gap-1.5 rounded-md border border-border bg-surface px-3 py-2.5">
+                <div class="flex items-center justify-between gap-3 text-sm">
+                  <span class="text-text-secondary">{{ 'finance.cashBefore' | t }}</span>
+                  <span class="font-medium tabular-nums">{{ money(servicesSubtotal()) }}</span>
+                </div>
+                <div class="flex items-center justify-between gap-3 text-sm">
+                  <span class="text-text-secondary">{{ 'finance.offer' | t }}</span>
+                  <span class="font-medium tabular-nums text-danger">−{{ money(offerAmount() + roundingDiscount()) }}</span>
+                </div>
+                <div class="flex items-center justify-between gap-3 border-t border-border pt-1.5 text-sm">
+                  <span class="font-medium text-text-primary">{{ 'finance.cashAfter' | t }}</span>
+                  <span class="text-base font-semibold tabular-nums">{{ money(cashAfterDiscount()) }}</span>
+                </div>
+              </div>
+              <input type="hidden" formControlName="cashText" />
               <div class="enzo-scroll max-h-36 overflow-y-auto overscroll-contain">
                 <app-payment-allocation [form]="form" [methods]="methodOptions()" [compact]="true" (addPayment)="addPayment()" (removePayment)="removePayment($event)" />
               </div>
@@ -202,6 +217,7 @@ export class PosOrderPage {
     phone: [''],
     referralSource: [''],
     referralOther: [''],
+    offerText: ['0'],
     totalText: ['0'],
     cashText: ['0'],
     services: this.formBuilder.array<ReturnType<PosOrderPage['serviceGroup']>>([]),
@@ -212,6 +228,10 @@ export class PosOrderPage {
     this.shell.setNav('finance.newOrder', this.breadcrumbs);
     inject(DestroyRef).onDestroy(() => this.shell.clearNav());
     this.form.controls.services.valueChanges.subscribe(() => {
+      this.revision.update((value) => value + 1);
+      this.bindAmounts();
+    });
+    this.form.controls.offerText.valueChanges.subscribe(() => {
       this.revision.update((value) => value + 1);
       this.bindAmounts();
     });
@@ -398,7 +418,7 @@ export class PosOrderPage {
     return this.i18n.formatNumber(value);
   }
 
-  protected amountDue(): number {
+  protected servicesSubtotal(): number {
     this.revision();
     const subtotal = this.form.controls.services.getRawValue().reduce((sum, row) => {
       const service = this.services().find((item) => item.id === row.serviceId);
@@ -406,6 +426,43 @@ export class PosOrderPage {
       return sum + (service ? service.price * quantity : 0);
     }, 0);
     return Math.max(0, Math.round(subtotal * 100) / 100);
+  }
+
+  protected offerPercent(): number {
+    this.revision();
+    const percent = Math.max(0, Number(this.form.controls.offerText.value) || 0);
+    return Math.min(percent, 100);
+  }
+
+  protected offerAmount(): number {
+    const subtotal = this.servicesSubtotal();
+    return Math.max(0, Math.round(subtotal * (this.offerPercent() / 100) * 100) / 100);
+  }
+
+  protected rawAmountDue(): number {
+    return Math.max(0, Math.round((this.servicesSubtotal() - this.offerAmount()) * 100) / 100);
+  }
+
+  /** Round cash totals down to a clean 5 (e.g. 632 → 630). */
+  protected roundCashAmount(amount: number): number {
+    return Math.max(0, Math.floor(amount / 5) * 5);
+  }
+
+  protected amountDue(): number {
+    return this.roundCashAmount(this.rawAmountDue());
+  }
+
+  protected roundingDiscount(): number {
+    return Math.max(0, Math.round((this.rawAmountDue() - this.amountDue()) * 100) / 100);
+  }
+
+  protected cashAfterDiscount(): number {
+    this.revision();
+    const other = this.form.controls.payments.getRawValue().reduce((sum, payment) => {
+      const amount = Number(payment.amount);
+      return sum + (Number.isFinite(amount) && amount > 0 ? amount : 0);
+    }, 0);
+    return Math.max(0, Math.round((this.amountDue() - other) * 100) / 100);
   }
 
   protected cashWithoutShift(): boolean {
@@ -431,9 +488,14 @@ export class PosOrderPage {
       this.error.set(this.i18n.translate('finance.orderInvalid'));
       return;
     }
+    const percent = Math.max(0, Number(value.offerText) || 0);
+    if (percent > 100) {
+      this.error.set(this.i18n.translate('finance.offerTooHigh'));
+      return;
+    }
+    const discount = Math.round((this.offerAmount() + this.roundingDiscount()) * 100) / 100;
     const total = this.amountDue();
     const cash = Math.max(0, Math.round((Number(value.cashText) || 0) * 100) / 100);
-    const discount = 0;
     const otherPayments = value.payments
       .map((payment) => ({ method: payment.method, amount: Number(payment.amount), referenceNumber: payment.referenceNumber.trim() }))
       .filter((payment) => payment.method !== 'CASH' && payment.amount > 0);

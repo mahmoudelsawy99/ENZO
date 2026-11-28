@@ -50,10 +50,12 @@ import type { SaleRecord } from './finance.models';
             }
           </ul>
           <div class="mt-2 grid gap-1 border-t border-border pt-2">
-            <div class="flex justify-between"><span>{{ 'finance.subtotal' | t }}</span><span>{{ money(receipt.subtotal) }}</span></div>
-            <div class="flex justify-between"><span>{{ 'finance.packageDiscount' | t }}</span><span>{{ money(receipt.packageDiscount) }}</span></div>
-            <div class="flex justify-between"><span>{{ 'finance.additionalDiscount' | t }}</span><span>{{ money(receipt.manualDiscount) }}</span></div>
-            <div class="flex justify-between font-medium"><span>{{ 'finance.total' | t }}</span><span>{{ money(receipt.totalAmount) }}</span></div>
+            <div class="flex justify-between"><span>{{ 'finance.cashBefore' | t }}</span><span>{{ money(receipt.subtotal) }}</span></div>
+            @if (receipt.packageDiscount > 0) {
+              <div class="flex justify-between"><span>{{ 'finance.packageDiscount' | t }}</span><span>−{{ money(receipt.packageDiscount) }}</span></div>
+            }
+            <div class="flex justify-between"><span>{{ 'finance.offerAmount' | t }}</span><span>−{{ money(receipt.manualDiscount) }}</span></div>
+            <div class="flex justify-between font-medium"><span>{{ 'finance.cashAfter' | t }}</span><span>{{ money(receipt.totalAmount) }}</span></div>
             <div class="flex justify-between"><span>{{ 'finance.tips' | t }}</span><span>{{ money(receipt.tipTotal) }}</span></div>
             <div class="flex justify-between"><span>{{ 'finance.refunded' | t }}</span><span>{{ money(receipt.refundedAmount) }}</span></div>
           </div>
@@ -86,11 +88,11 @@ import type { SaleRecord } from './finance.models';
             </li>
           }
         </ul>
-        <p class="ticket-row"><span>{{ 'finance.subtotal' | t }}</span><span>{{ money(receipt.subtotal) }}</span></p>
+        <p class="ticket-row"><span>{{ 'finance.cashBefore' | t }}</span><span>{{ money(receipt.subtotal) }}</span></p>
         @if (receipt.totalDiscount > 0) {
-          <p class="ticket-row"><span>{{ 'finance.additionalDiscount' | t }}</span><span>{{ money(receipt.totalDiscount) }}</span></p>
+          <p class="ticket-row"><span>{{ 'finance.offerAmount' | t }}</span><span>−{{ money(receipt.totalDiscount) }}</span></p>
         }
-        <p class="ticket-total"><span>{{ 'finance.total' | t }}</span><span>{{ money(receipt.totalAmount) }}</span></p>
+        <p class="ticket-total"><span>{{ 'finance.cashAfter' | t }}</span><span>{{ money(receipt.totalAmount) }}</span></p>
         @for (payment of receipt.payments; track payment.id) {
           <p class="ticket-row">
             <span>{{ 'finance.methods.' + payment.method | t }}</span>
