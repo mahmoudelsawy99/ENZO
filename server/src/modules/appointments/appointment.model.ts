@@ -47,6 +47,7 @@ const nameSchema = new Schema(
 const serviceLineSchema = new Schema(
   {
     serviceId: { type: Schema.Types.ObjectId, ref: 'Service', required: true },
+    barberEmployeeId: { type: Schema.Types.ObjectId, ref: 'Employee', default: null },
     serviceNameSnapshot: { type: nameSchema, required: true },
     unitPriceSnapshot: { type: Number, required: true, min: 0 },
     quantity: { type: Number, required: true, min: 1, max: 99 },

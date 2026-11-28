@@ -39,6 +39,7 @@ const itemSchema = new Schema(
   {
     itemType: { type: String, required: true, enum: ITEM_TYPES },
     serviceId: { type: Schema.Types.ObjectId, ref: 'Service', default: null },
+    barberEmployeeId: { type: Schema.Types.ObjectId, ref: 'Employee', default: null },
     productId: { type: Schema.Types.ObjectId, ref: 'Product', default: null },
     customerPackageId: { type: Schema.Types.ObjectId, ref: 'CustomerPackage', default: null },
     serviceNameSnapshot: { type: nameSchema, required: true },

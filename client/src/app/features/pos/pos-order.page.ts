@@ -73,7 +73,7 @@ const REFERRAL_SOURCES = ['FRIEND', 'FACEBOOK', 'INSTAGRAM', 'WHATSAPP', 'GOOGLE
             </div>
             <div class="enzo-scroll grid min-h-0 flex-1 content-start grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-2 overflow-y-auto p-3">
               @for (service of visibleServices(); track service.id) {
-                <button type="button" class="relative flex min-h-[5.25rem] flex-col justify-between rounded-lg border px-3 py-2.5 text-start transition-colors" [class.border-brand-red]="quantityOf(service.id) > 0" [class.bg-surface-elevated]="quantityOf(service.id) > 0" [class.border-border]="quantityOf(service.id) === 0" [class.bg-surface]="quantityOf(service.id) === 0" (click)="pickService(service)">
+                <button type="button" class="relative flex min-h-[5.25rem] flex-col justify-between rounded-lg border px-3 py-2.5 text-start transition-colors" [attr.aria-pressed]="quantityOf(service.id) > 0" [class.border-brand-red]="quantityOf(service.id) > 0" [class.bg-surface-elevated]="quantityOf(service.id) > 0" [class.border-border]="quantityOf(service.id) === 0" [class.bg-surface]="quantityOf(service.id) === 0" (click)="pickService(service)">
                   <span class="line-clamp-2 pe-6 text-sm font-medium leading-snug">{{ serviceName(service) }}</span>
                   <span class="text-sm font-semibold text-brand-gold">{{ money(service.price) }}</span>
                   @if (quantityOf(service.id) > 0) {
@@ -121,7 +121,7 @@ const REFERRAL_SOURCES = ['FRIEND', 'FACEBOOK', 'INSTAGRAM', 'WHATSAPP', 'GOOGLE
               @if (orderLines().length === 0) {
                 <p class="px-2 py-8 text-center text-sm text-text-secondary">{{ 'finance.emptyOrder' | t }}</p>
               }
-              @for (line of orderLines(); track line.serviceId) {
+              @for (line of orderLines(); track line.index) {
                 <div class="rounded-lg border border-border bg-surface-elevated px-3 py-2" [formGroupName]="line.index">
                   <div class="flex items-start justify-between gap-3">
                     <span class="text-sm font-medium leading-snug">{{ line.name }}</span>
@@ -337,12 +337,7 @@ export class PosOrderPage {
 
   protected pickService(service: ServiceRecord): void {
     const rows = this.form.controls.services;
-    const existing = rows.controls.find((group) => group.controls.serviceId.value === service.id);
-    if (existing) {
-      existing.controls.quantity.setValue((Number(existing.controls.quantity.value) || 1) + 1);
-    } else {
-      rows.push(this.serviceGroup(service.id, this.defaultBarberId()));
-    }
+    rows.push(this.serviceGroup(service.id, this.defaultBarberId()));
     this.scrollOrderLines();
   }
 

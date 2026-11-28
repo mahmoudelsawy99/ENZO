@@ -87,7 +87,10 @@ async function presentSale(access: TenantAccess, id: string) {
     Customer.findOne({ _id: sale.customerId, tenantId: access.tenantId }).select('fullName phone'),
     User.findById(sale.cashierUserId).select('fullName'),
   ]);
-  const employees = await Employee.find({ tenantId: access.tenantId, _id: { $in: tips.map((tip) => tip.employeeId) } }).select('fullName');
+  const employees = await Employee.find({
+    tenantId: access.tenantId,
+    _id: { $in: [...tips.map((tip) => tip.employeeId), ...sale.items.map((item) => item.barberEmployeeId).filter(Boolean)] },
+  }).select('fullName');
   const employeeNames = new Map(employees.map((employee) => [String(employee._id), employee.fullName]));
   return {
     id: String(sale._id),
@@ -102,6 +105,8 @@ async function presentSale(access: TenantAccess, id: string) {
     items: sale.items.map((item) => ({
       itemType: item.itemType,
       serviceId: item.serviceId ? String(item.serviceId) : null,
+      barberEmployeeId: item.barberEmployeeId ? String(item.barberEmployeeId) : '',
+      barberName: item.barberEmployeeId ? employeeNames.get(String(item.barberEmployeeId)) ?? '' : '',
       productId: item.productId ? String(item.productId) : null,
       sku: item.skuSnapshot ?? '',
       customerPackageId: item.customerPackageId ? String(item.customerPackageId) : null,
@@ -319,6 +324,7 @@ export async function checkout(access: TenantAccess, input: CheckoutBody) {
       const serviceItems = claimed.services.map((line) => ({
         itemType: 'SERVICE' as const,
         serviceId: line.serviceId,
+        barberEmployeeId: line.barberEmployeeId ?? claimed.barberEmployeeId,
         customerPackageId: null,
         serviceNameSnapshot: names(line.serviceNameSnapshot),
         quantity: line.quantity,
@@ -440,7 +446,8 @@ export async function checkout(access: TenantAccess, input: CheckoutBody) {
         await saveDoc(shift, session);
       }
       for (const line of claimed.services) {
-        const quote = await quoteCommission(access.tenantId, String(claimed.barberEmployeeId), String(line.serviceId));
+        const employeeId = line.barberEmployeeId ?? claimed.barberEmployeeId;
+        const quote = await quoteCommission(access.tenantId, String(employeeId), String(line.serviceId));
         const chargeable = line.quantity - (redeemed.get(String(line.serviceId)) ?? 0);
         const base = toMinor(line.unitPriceSnapshot) * Math.max(chargeable, 0);
         const amount = chargeable <= 0 ? 0 : quote.kind === 'PERCENTAGE' ? Math.round((base * quote.value) / 100) : toMinor(quote.value) * chargeable;
@@ -448,7 +455,7 @@ export async function checkout(access: TenantAccess, input: CheckoutBody) {
           tenantId: access.tenantId,
           branchId: claimed.branchId,
           transactionId: sale._id,
-          employeeId: claimed.barberEmployeeId,
+          employeeId,
           serviceId: line.serviceId,
           commissionTypeSnapshot: quote.kind,
           commissionRateSnapshot: quote.value,
@@ -608,6 +615,7 @@ async function buildOrderLines(tenantId: string, items: CounterOrderBody['servic
     }
     return {
       serviceId: service._id,
+      barberEmployeeId: item.barberEmployeeId ?? null,
       serviceNameSnapshot: { en: service.name.en, ar: service.name.ar ?? '' },
       unitPriceSnapshot: service.price,
       quantity: item.quantity,
@@ -636,7 +644,10 @@ async function createReadyAppointment(access: TenantAccess, input: CounterOrderB
           extraBarberIds: [...new Set(input.extraBarberIds)].filter((id) => id !== input.barberEmployeeId),
           type: 'WALK_IN',
           scheduledAt: now,
-          services: lines,
+          services: lines.map((line, index) => ({
+            ...line,
+            barberEmployeeId: input.services[index]?.barberEmployeeId ?? input.barberEmployeeId,
+          })),
           subtotal,
           discount: 0,
           total: subtotal,
@@ -691,6 +702,11 @@ export async function createCounterOrder(access: TenantAccess, input: CounterOrd
   }
   await requireBranch(access, input.branchId, null);
   await requireOrderBarber(access, input.branchId, input.barberEmployeeId);
+  for (const line of input.services) {
+    if (line.barberEmployeeId) {
+      await requireOrderBarber(access, input.branchId, line.barberEmployeeId);
+    }
+  }
   const extraBarberIds = [...new Set(input.extraBarberIds)].filter((id) => id !== input.barberEmployeeId);
   for (const employeeId of extraBarberIds) {
     await requireOrderBarber(access, input.branchId, employeeId);
